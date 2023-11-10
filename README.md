@@ -26,6 +26,21 @@ bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/
 bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/install.sh)
 ```
 
+### 尝鲜区
+#### tcp-brutal reality(双端sing-box 1.7.0以上可用)
+
+[文档](https://github.com/apernet/tcp-brutal/blob/master/README.zh.md)
+
+```bash
+bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/tcp-brutal-reality.sh)
+```
+
+#### grpc reality
+```bash
+bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/grpc-reality.sh)
+```
+
+
 ### 安装完成后终端输入 mianyang 可再次调用本脚本
 
 

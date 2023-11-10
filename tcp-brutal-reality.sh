@@ -460,6 +460,9 @@ uninstall_singbox() {
 }
 
 # install_base
+install_brutal(){
+  bash <(curl -fsSL https://tcp.hy2.sh/)
+}
 
 # Check if reality.json, sing-box, and sing-box.service already exist
 if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/mianyang.sh" ] && [ -f "/usr/bin/mianyang" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
@@ -526,6 +529,8 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           ;;
 	esac
 	fi
+
+install_brutal
 
 mkdir -p "/root/sbox/"
 
