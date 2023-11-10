@@ -255,7 +255,7 @@ cat << EOF
       "packet_encoding": "xudp",
       "server": "$server_ip",
       "server_port": $reality_port,
-      "flow": "xtls-rprx-vision",
+      "flow": "",
       "tls": {
         "enabled": true,
         "server_name": "$reality_server_name",
@@ -274,7 +274,7 @@ cat << EOF
         "protocol": "h2mux",
         "max_connections": 1,
         "min_streams": 4,
-        "padding": false, //和vision填充冲突所以false
+        "padding": true,
         "brutal": {
             "enabled": true,
             "up_mbps": 50, //上行速度，windows，macos不会生效所以可随便写
@@ -530,6 +530,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
 	esac
 	fi
 
+  
 install_brutal
 
 mkdir -p "/root/sbox/"
@@ -616,7 +617,7 @@ cat > /root/sbox/sbconfig_server.json << EOF
       "users": [
         {
           "uuid": "$reality_uuid",
-          "flow": "xtls-rprx-vision"
+          "flow": ""
         }
       ],
       "tls": {
@@ -634,7 +635,7 @@ cat > /root/sbox/sbconfig_server.json << EOF
       },
         "multiplex": {
             "enabled": true,
-            "padding": false,
+            "padding": true,
             "brutal": {
                 "enabled": true,
                 "up_mbps": $brutal_up,
