@@ -150,7 +150,7 @@ http {
             "alpn": [
                 "h3"
             ],
-            "certificate_path": "/root/cert/mareep.net.cer", //可以换成你自己的域名证书路径了
+            "certificate_path": "/root/cert/fullchain.cer", //可以换成你自己的域名证书路径了
             "key_path": "/root/cert/mareep.net.key" //可以换成你自己的域名证书路径了
         }
     }
