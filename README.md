@@ -61,5 +61,6 @@ wget -N https://gitlab.com/fscarmen/warp/-/raw/main/warp-go.sh && bash warp-go.s
 ```
 
 ## Credit
+- [sing-box-example](https://github.com/chika0801/sing-box-examples)
 - [sing-reality-box](https://github.com/deathline94/sing-REALITY-Box)
 - [sing-box](https://github.com/SagerNet/sing-box)
