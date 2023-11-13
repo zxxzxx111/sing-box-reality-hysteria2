@@ -28,7 +28,7 @@ bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/
 
 ### hysteria2端口跳跃功能
 
-因为只有meta和nekobox支持端口跳跃，meta和sing-box并不会支持，所以脚本不添加，如果想要**开启端口跳跃可根据ipv4或v6**执行：
+因为只有官方客户端和nekobox支持端口跳跃，meta和sing-box并不会支持，所以脚本不添加，如果想要**开启端口跳跃可根据ipv4或v6**执行：
 
 ```
 # IPv4
