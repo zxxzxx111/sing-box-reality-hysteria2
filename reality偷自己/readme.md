@@ -160,3 +160,19 @@ http {
 
 ## 客户端
 客户端只需要修改域名即可
+```yaml
+  - name: Reality
+    type: vless
+    server: 101.207.201.133
+    port: 443 #ngx监听443sni至sing-box的8013
+    uuid: 50000006-58ef-4ac6-0000-41f9600003
+    network: tcp
+    udp: true
+    tls: true
+    flow: xtls-rprx-vision
+    servername: wow.mareep.net #你的域名
+    client-fingerprint: chrome
+    reality-opts:
+      public-key: abcacbbcbcbcbacbabcbsbc
+      short-id: acbcbabcabab
+```
