@@ -13,7 +13,8 @@ bash <(curl -Ls https://raw.githubusercontent.com/vveg26/myself/main/BashScript/
 ```
 ## 修改ngx内容
 如果需要更加多功能，请参考：https://github.com/vveg26/myself/tree/main/Conf/sing-box
-nano /etc/nginx/config
+
+nano /etc/nginx/nginx.conf
 
 ```nginx
 user nginx;
