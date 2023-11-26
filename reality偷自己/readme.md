@@ -38,7 +38,8 @@ stream {
 
     #偷自己的证书，当443端口sni匹配到reality.example.com，则直接转发到8013端口执行后续操作，此处转发到sing-box监听的8013端口之后由reality回落到自己的8003端口去偷reality.example.com的证书
     upstream reality2 {
-        server 127.0.0.1:8013;
+        server 127.0.0.1:8013;  # IPv4 地址
+        server [::1]:8013;      # IPv6 地址
     }
 
     # 监听 443 并开启 ssl_preread,监听对应域名并转发
@@ -80,6 +81,7 @@ http {
     #偷取自己证书，和上文的reality2对应，这里监听8003端口，对应sing-box那边监听reality2那边的8013，然后回落到nginx这边的8003端口偷取这里reality.example.com的证书
     server {
         listen 8003 ssl http2;
+        listen [::]:8003 ssl http2;  # 同时监听 IPv6 地址
 
         ssl_certificate       /root/cert/mareep.net.cer;  # 证书位置，可以用泛域名证书一劳永逸
         ssl_certificate_key   /root/cert/mareep.net.key;  # 私钥
@@ -128,7 +130,7 @@ http {
         "reality": {
           "enabled": true,
           "handshake": {
-            "server": "127.0.0.1", //因为偷自己，所以本地回环
+            "server": "::", //因为偷自己，所以本地回环127.0.0.1也可以换成::
             "server_port": 8003 //对应ngx的server监听端口
           },
           "private_key": "abcacbbcbcbcbacbabcbsbc",
