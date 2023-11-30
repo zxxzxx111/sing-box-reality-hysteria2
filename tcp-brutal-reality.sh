@@ -141,11 +141,25 @@ cat << EOF
     "level": "debug",
     "timestamp": true
   },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "127.0.0.1:9090",
+      "external_ui_download_url": "",
+      "external_ui_download_detour": "",
+      "external_ui": "ui",
+      "secret": "",
+      "default_mode": "rule"
+    },
+    "cache_file": {
+      "enabled": true,
+      "store_fakeip": false
+    }
+  },
   "dns": {
     "servers": [
       {
         "tag": "proxyDns",
-        "address": "8.8.8.8",
+        "address": "https://8.8.8.8/dns-query",
         "detour": "proxy"
       },
       {
@@ -172,7 +186,7 @@ cat << EOF
         "server": "localDns"
       },
       {
-        "geosite": "category-ads-all",
+        "rule_set": "geosite-category-ads-all",
         "server": "block"
       },
       {
@@ -181,7 +195,7 @@ cat << EOF
         "disable_cache": true
       },
       {
-        "geosite": "cn",
+        "rule_set": "geosite-cn",
         "server": "localDns"
       },
       {
@@ -193,7 +207,7 @@ cat << EOF
         "server": "proxyDns"
       },
       {
-        "geosite": "geolocation-!cn",
+        "rule_set": "geosite-geolocation-!cn",
         "server": "proxyDns"
       },
       {
@@ -308,14 +322,6 @@ cat << EOF
   "route": {
     "auto_detect_interface": true,
     "final": "proxy",
-    "geoip": {
-      "download_url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.db",
-      "download_detour": "direct"
-    },
-    "geosite": {
-      "download_url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.db",
-      "download_detour": "direct"
-    },
     "rules": [
       {
         "protocol": "dns",
@@ -327,7 +333,7 @@ cat << EOF
         "outbound": "block"
       },
       {
-        "geosite": "category-ads-all",
+        "rule_set": "geosite-category-ads-all",
         "outbound": "block"
       },
       {
@@ -348,38 +354,132 @@ cat << EOF
         "outbound": "direct"
       },
       {
-        "geosite": "geolocation-!cn",
+        "rule_set": "geosite-geolocation-!cn",
         "outbound": "proxy"
       },
       {
-        "geoip": [
-          "private",
-          "cn"
-        ],
+        "ip_is_private": true,
         "outbound": "direct"
       },
       {
-        "geosite": "cn",
+        "rule_set": "geoip-cn",
+        "outbound": "direct"
+      },
+      {
+        "rule_set": "geosite-cn",
         "outbound": "direct"
       }
+    ],
+    "rule_set": [
+      {
+        "tag": "geoip-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs",
+        "download_detour": "auto"
+      },
+      {
+        "tag": "geosite-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs",
+        "download_detour": "auto"
+      },
+      {
+        "tag": "geosite-geolocation-!cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs",
+        "download_detour": "auto"
+      },
+      {
+        "tag": "geosite-category-ads-all",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
+        "download_detour": "auto"
+      }
     ]
-  },
-  "experimental": {
-    "clash_api": {
-      "external_controller": "127.0.0.1:9090",
-      "external_ui_download_url": "",
-      "external_ui_download_detour": "",
-      "external_ui": "ui",
-      "secret": "",
-      "default_mode": "rule",
-      "store_selected": true,
-      "cache_file": "",
-      "cache_id": ""
-    }
   }
 }
 EOF
+show_notice "clash-meta客户端配置"
+cat << EOF
+port: 7890
+allow-lan: true
+mode: rule
+log-level: info
+unified-delay: true
+global-client-fingerprint: chrome
+ipv6: true
+dns:
+  enable: true
+  listen: :53
+  ipv6: true
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  default-nameserver: 
+    - 223.5.5.5
+    - 8.8.8.8
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  fallback:
+    - https://1.0.0.1/dns-query
+    - tls://dns.google
+  fallback-filter:
+    geoip: true
+    geoip-code: CN
+    ipcidr:
+      - 240.0.0.0/4
 
+proxies:        
+  - name: Reality-Brutal
+    type: vless
+    server: $server_ip
+    port: $reality_port
+    uuid: $reality_uuid
+    network: tcp
+    udp: true
+    tls: true
+    flow: 
+    servername: $reality_server_name
+    client-fingerprint: chrome
+    reality-opts:
+      public-key: $public_key
+      short-id: $short_id
+    smux:
+      enabled: true
+      protocol: h2mux
+      max-connections: 1
+      min-streams: 4
+      padding: true
+      brutal-opts:
+        enabled: true
+        up: 50
+        down: $brutal_up
+
+proxy-groups:
+  - name: 节点选择
+    type: select
+    proxies:
+      - 自动选择
+      - Reality-Brutal
+
+  - name: 自动选择
+    type: url-test #选出延迟最低的机场节点
+    proxies:
+      - Reality-Brutal
+    url: "http://www.gstatic.com/generate_204"
+    interval: 300
+    tolerance: 50
+
+
+rules:
+    - GEOIP,LAN,DIRECT
+    - GEOIP,CN,DIRECT
+    - MATCH,节点选择
+EOF
 }
 
 #enable bbr
@@ -440,20 +540,25 @@ modify_singbox() {
 
 uninstall_singbox() {
     # Stop and disable services
-    systemctl stop sing-box 
-    systemctl disable sing-box  > /dev/null 2>&1
+    systemctl stop sing-box argo
+    systemctl disable sing-box argo > /dev/null 2>&1
 
     # Remove service files
     rm -f /etc/systemd/system/sing-box.service
+    rm -f /etc/systemd/system/argo.service
 
     # Remove configuration and executable files
     rm -f /root/sbox/sbconfig_server.json
     rm -f /root/sbox/sing-box
-    rm -f /root/sbox/mianyang.sh
     rm -f /usr/bin/mianyang
+    rm -f /root/sbox/mianyang.sh
+    rm -f /root/sbox/cloudflared-linux
+    rm -f /root/sbox/self-cert/private.key
+    rm -f /root/sbox/self-cert/cert.pem
     rm -f /root/sbox/config
 
     # Remove directories
+    rm -rf /root/sbox/self-cert/
     rm -rf /root/sbox/
 
     echo "卸载完成"
