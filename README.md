@@ -3,7 +3,7 @@
 
 目前加了openai和奈飞，默认使用warp v6解锁，个人测试下来解锁的很舒畅。[warp解锁参考文章](https://github.com/chika0801/sing-box-examples/blob/main/wireguard.md)
 
-如需添加其他分流网站，~~用脚本添加意义不大~~，所以**强烈建议手动修改配置文件，更加灵活**，并且singbox舍弃了肥硕无比的geodb，切成碎块使用更加灵活和轻便。
+如需添加其他分流网站，**建议手动修改配置文件**，更加灵活，搭配1.8.0的碎片geo singbox，个性化更高
 
 <details>
   <summary>点击展开/折叠</summary>
@@ -30,7 +30,7 @@ nano /root/sbox/sbconfig_server.json
           "rule_set": "geosite-pornhub",
           "outbound": "warp-IPv6-out" 
         },
-        {
+        {//域名关键字触发，包含这个关键字
           "domain_keyword": [
             "ipaddress"
           ],
