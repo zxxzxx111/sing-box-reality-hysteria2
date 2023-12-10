@@ -27,7 +27,7 @@ nano /root/sbox/sbconfig_server.json
           "outbound": "warp-IPv6-out" //可改为warp-IPv4-out
         },
         { //此处为添加内容********，rule_set对应下面tag
-          "rule_set": "geosite-netflix",
+          "rule_set": "geosite-pornhub",
           "outbound": "warp-IPv6-out" 
         },
         {
