@@ -39,7 +39,7 @@ echo ""
 # 安装依赖
 install_base(){
   # 安装qrencode
-  local packages=("qrencode")
+  local packages=("qrencode" "jq")
   for package in "${packages[@]}"; do
     if ! command -v "$package" &> /dev/null; then
       echo "正在安装 $package..."
@@ -724,11 +724,15 @@ modify_singbox() {
     done
 
     # 修改sing-box
-  sed -i -e "/\"type\": \"vless\"/,/\"type\": \"hysteria2\"/ { /\"listen_port\":/s/[0-9]\+/$reality_port/ }" \
-        -e "/\"type\": \"hysteria2\"/,/\"tls\":/ { /\"listen_port\":/s/[0-9]\+/$hy_port/ }" \
-        -e "s/\"server_name\": *\"[^\"]*\"/\"server_name\": \"$reality_server_name\"/" \
-        -e "s/\"server\": *\"[^\"]*\"/\"server\": \"$reality_server_name\"/" /root/sbox/sbconfig_server.json
-
+    jq --arg reality_port "$reality_port" \
+        --arg hy_port "$hy_port" \
+        --arg reality_server_name "$reality_server_name" \
+        '
+        (.inbounds[] | select(.type == "vless") | .listen_port) |= ($reality_port | tonumber) |
+        (.inbounds[] | select(.type == "hysteria2") | .listen_port) |= ($hy_port | tonumber) |
+        (.inbounds[] | select(.type == "vless") | .tls.server_name) |= $reality_server_name |
+        (.inbounds[] | select(.type == "vless") | .tls.reality.handshake.server) |= $reality_server_name
+        ' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
     #修改config
     sed -i "s/REALITY_PORT='[^']*'/REALITY_PORT='$reality_port'/" /root/sbox/config
     sed -i "s/REALITY_SERVER_NAME='[^']*'/REALITY_SERVER_NAME='$reality_server_name'/" /root/sbox/config
@@ -775,6 +779,97 @@ uninstall_singbox() {
     echo "卸载完成"
 }
 
+warp_enable(){
+    echo "开始注册warp"
+    # 注册warp
+    output=$(bash -c "$(curl -L warp-reg.vercel.app)")
+
+    # 获取关键词
+    v6=$(echo "$output" | grep -oP '"v6": "\K[^"]+' | awk 'NR==2')
+    private_key=$(echo "$output" | grep -oP '"private_key": "\K[^"]+')
+    reserved=$(echo "$output" | grep -oP '"reserved_str": "\K[^"]+')
+    echo $v6
+    # File path of the JSON configuration
+    config_file="/root/sbox/sbconfig_server.json"
+
+    # Command to modify the JSON configuration in-place
+jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" '
+    .route = {
+      "rules": [
+        {
+          "rule_set": "geosite-openai",
+          "outbound": "warp-IPv6-out"
+        },
+        {
+          "rule_set": "geosite-netflix",
+          "outbound": "warp-IPv6-out" 
+        },
+        {
+          "domain_keyword": [
+            "ipaddress"
+          ],
+          "outbound": "warp-IPv6-out" 
+        }
+      ],
+      "rule_set": [
+        { 
+          "tag": "geosite-openai",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/openai.srs",
+          "download_detour": "direct"
+        },
+        {
+          "tag": "geosite-netflix",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/netflix.srs",
+          "download_detour": "direct"
+        }
+      ]
+    } | .outbounds += [
+      {
+        "type": "direct",
+        "tag": "warp-IPv4-out",
+        "detour": "wireguard-out",
+        "domain_strategy": "ipv4_only"
+      },
+      {
+        "type": "direct",
+        "tag": "warp-IPv6-out",
+        "detour": "wireguard-out",
+        "domain_strategy": "ipv6_only"
+      },
+      {
+        "type": "wireguard",
+        "tag": "wireguard-out",
+        "server": "162.159.192.1",
+        "server_port": 2408,
+        "local_address": [
+          "172.16.0.2/32",
+          $v6 + "/128"
+        ],
+        "private_key": $private_key,
+        "peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+        "reserved": $reserved,
+        "mtu": 1280
+      }
+    ]' "$config_file" > temp_config.json && mv temp_config.json "$config_file"
+
+    sed -i "s/WARP_ENABLE=FALSE/WARP_ENABLE=TRUE/" /root/sbox/config
+
+    systemctl reload sing-box
+}
+
+warp_disable(){
+    # File path of the JSON configuration
+    config_file="/root/sbox/sbconfig_server.json"
+
+    # Command to remove specific content from the JSON configuration
+    jq 'del(.route) | del(.outbounds[] | select(.tag == "warp-IPv4-out" or .tag == "warp-IPv6-out" or .tag == "wireguard-out"))' "$config_file" > temp_config.json && mv temp_config.json "$config_file"
+    sed -i "s/WARP_ENABLE=TRUE/WARP_ENABLE=FALSE/" /root/sbox/config
+}
+
 install_base
 
 # Check if reality.json, sing-box, and sing-box.service already exist
@@ -792,8 +887,9 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/cloudflared-linu
     echo "6. 重启sing-box"
     echo "7. 开启bbr"
     echo "8. 卸载"
+    echo "9. warp开启/关闭（默认解锁奈飞和chatgpt），有能力可以手动添加更多分流"
     echo ""
-    read -p "Enter your choice (1-8): " choice
+    read -p "Enter your choice (1-9): " choice
 
     case $choice in
       1)
@@ -843,6 +939,32 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/cloudflared-linu
           systemctl restart sing-box
           echo "重启完成"
 	        exit 0
+          ;;
+      9)
+          # Read the value of WARP_ENABLE from the config file
+          iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
+
+          # Display a warning and ask for confirmation
+          read -p "注意：此操作会覆盖原有wg配置和分流配置，输入y继续? (y/n): " confirm
+
+          # Check the user's confirmation
+          if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+              if [ "$iswarp" = "FALSE" ]; then
+                  # Run command 1 when WARP_ENABLE is TRUE
+                  warp_enable
+                  # Add your command 1 here
+              else
+                  # Run command 2 when WARP_ENABLE is FALSE
+                  warp_disable
+                  # Add your command 2 here
+              fi
+              echo "Configuration updated successfully."
+          else
+              echo "No changes were made to the configuration."
+          fi
+
+
+	  exit 0
           ;;
       *)
           echo "Invalid choice. Exiting."
@@ -972,6 +1094,9 @@ WS_PATH='$ws_path'
 # Argo
 ARGO_DOMAIN=''
 
+# Warp
+WARP_ENABLE=FALSE
+
 EOF
 
 #TODO argo开启
@@ -1009,6 +1134,8 @@ cat > /root/sbox/sbconfig_server.json << EOF
   },
   "inbounds": [
     {
+      "sniff": true,
+      "sniff_override_destination": true,
       "type": "vless",
       "tag": "vless-in",
       "listen": "::",
@@ -1034,6 +1161,8 @@ cat > /root/sbox/sbconfig_server.json << EOF
       }
     },
     {
+        "sniff": true,
+        "sniff_override_destination": true,
         "type": "hysteria2",
         "tag": "hy2-in",
         "listen": "::",
@@ -1053,6 +1182,8 @@ cat > /root/sbox/sbconfig_server.json << EOF
         }
     },
     {
+        "sniff": true,
+        "sniff_override_destination": true,
         "type": "vmess",
         "tag": "vmess-in",
         "listen": "::",

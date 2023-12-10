@@ -1,4 +1,62 @@
+# 12.10更新
+新添加warp解锁功能，输入mianyang，输入8。
 
+目前加了openai和奈飞，默认使用warp v6解锁，个人测试下来解锁的很舒畅。[warp解锁参考文章](https://github.com/chika0801/sing-box-examples/blob/main/wireguard.md)
+
+如需添加其他分流网站，~~用脚本添加意义不大~~，所以**强烈建议手动修改配置文件，更加灵活**，并且singbox舍弃了肥硕无比的geodb，切成碎块使用更加灵活和轻便。
+
+<details>
+  <summary>点击展开/折叠</summary>
+```bash
+nano /root/sbox/sbconfig_server.json
+```
+修改route 块下的内容，比如添加一个pornhub的例子：
+```json
+      "rules": [
+        {
+          "rule_set": "geosite-openai",
+          "outbound": "warp-IPv6-out" //可改为warp-IPv4-out
+        },
+        {
+          "rule_set": "geosite-netflix",
+          "outbound": "warp-IPv6-out" //可改为warp-IPv4-out
+        },
+        { //此处为添加内容********，rule_set对应下面tag
+          "rule_set": "geosite-netflix",
+          "outbound": "warp-IPv6-out" 
+        },
+        {
+          "domain_keyword": [
+            "ipaddress"
+          ],
+          "outbound": "warp-IPv6-out" //可改为warp-IPv4-out
+        }
+      ],
+      "rule_set": [
+        { //照虎画猫，srs文件仓库推荐（https://github.com/MetaCubeX/meta-rules-dat/tree/sing/geo/geosite），只需复制下面的样式，修改xxx.srs即可
+          "tag": "geosite-openai",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/openai.srs",
+          "download_detour": "direct"
+        },
+        {
+          "tag": "geosite-netflix",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/netflix.srs",
+          "download_detour": "direct"
+        },
+        { //此处为添加内容******，tag对应上面
+          "tag": "geosite-pornhub",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/pornhub.srs",
+          "download_detour": "direct"
+        }
+      ]
+```
+</details>
 
 
 - 强烈建议开启bbr加速，可大幅加快节点reality和vmess节点的速度
