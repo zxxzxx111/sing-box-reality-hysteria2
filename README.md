@@ -7,11 +7,16 @@
 
 <details>
   <summary>点击展开/折叠</summary>
+  
 ```bash
+  
 nano /root/sbox/sbconfig_server.json
+
 ```
+
 修改route 块下的内容，比如添加一个pornhub的例子：
 ```json
+  
       "rules": [
         {
           "rule_set": "geosite-openai",
@@ -55,6 +60,7 @@ nano /root/sbox/sbconfig_server.json
           "download_detour": "direct"
         }
       ]
+      
 ```
 </details>
 
