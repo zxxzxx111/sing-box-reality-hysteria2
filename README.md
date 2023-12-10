@@ -1,5 +1,5 @@
 # 12.10更新
-新添加warp解锁功能，输入mianyang，输入8。
+由于需求，新添加了warp解锁功能，输入mianyang，输入8。
 
 目前加了openai和奈飞，默认使用warp v6解锁，个人测试下来解锁的很舒畅。[warp解锁参考文章](https://github.com/chika0801/sing-box-examples/blob/main/wireguard.md)
 
@@ -120,14 +120,6 @@ ip6tables -t nat -D PREROUTING -i eth0 -p udp --dport 20000:50000 -j DNAT --to-d
 </details>
 
 
-
-warp解锁v4 v6等操作自行使用warp-go脚本
-具体操作就不说了
-
-```
-wget -N https://gitlab.com/fscarmen/warp/-/raw/main/warp-go.sh && bash warp-go.sh
-```
-
 ## Credit
 - [sing-box-example](https://github.com/chika0801/sing-box-examples)
 - [sing-reality-box](https://github.com/deathline94/sing-REALITY-Box)
@@ -135,7 +127,7 @@ wget -N https://gitlab.com/fscarmen/warp/-/raw/main/warp-go.sh && bash warp-go.s
 
 
 ## 尝鲜区
-### tcp-brutal reality(双端sing-box 1.7.0及以上可用)
+### tcp-brutal reality(双端sing-box 1.7.0及以上可用)，暂时没添加warp分流功能，~~好像没啥人需要这个功能~~
 
 [文档](https://github.com/apernet/tcp-brutal/blob/master/README.zh.md)
 
