@@ -1037,6 +1037,8 @@ EOF
 }
 
 uninstall_singbox() {
+
+    disable_hy2hopping
     # Stop and disable services
     systemctl stop sing-box argo
     systemctl disable sing-box argo > /dev/null 2>&1
@@ -1186,12 +1188,69 @@ process_singbox() {
             echo "singbox日志如下："
             journalctl -u sing-box -o cat -f
             ;;
+        5)
+            echo "singbox服务端如下："
+            cat /root/sbox/sbconfig_server.json
+            ;;
         *)
             echo "请输入正确选项: $1"
             ;;
     esac
 }
+# 开启hysteria2端口跳跃
+enable_hy2hopping(){
 
+    hy_current_port=$(grep -o "HY_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+    read -p "选择IPv版本 (输入4或6，默认为4): " -r ip_version
+    ip_version=${ip_version:-4}
+
+    if [ "$ip_version" == "4" ]; then
+        read -p "输入UDP端口范围的起始值(默认20000): " -r start_port
+        start_port=${start_port:-20000}
+
+        read -p "输入UDP端口范围的结束值(默认30000): " -r end_port
+        end_port=${end_port:-30000}
+
+        iptables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
+
+        sed -i "s/HY_HOPPING_START='[^']*'/HY_HOPPING_START='$start_port'/" /root/sbox/config
+        sed -i "s/HY_HOPPING_END='[^']*'/HY_HOPPING_END='$end_port'/" /root/sbox/config
+        sed -i "s/HY_HOPPING=FALSE/HY_HOPPING='TRUE'/" /root/sbox/config
+        echo "IPv4规则已设置：iptables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port"
+    elif [ "$ip_version" == "6" ]; then
+        read -p "输入UDP端口范围的起始值(默认20000): " -r start_port
+        start_port=${start_port:-20000}
+
+        read -p "输入UDP端口范围的结束值(默认30000): " -r end_port
+        end_port=${end_port:-30000}
+
+        ip6tables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
+
+        sed -i "s/HY_HOPPING_START='[^']*'/HY_HOPPING_START='$start_port'/" /root/sbox/config
+        sed -i "s/HY_HOPPING_END='[^']*'/HY_HOPPING_END='$end_port'/" /root/sbox/config
+
+        sed -i "s/HY_HOPPING=FALSE/HY_HOPPING='TRUE'/" /root/sbox/config
+        echo "IPv6规则已设置：ip6tables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port"
+    else
+        echo "无效的选择。请输入 '4' 或 '6'。"
+    fi
+}
+
+disable_hy2hopping(){
+  hy_current_port=$(grep -o "HY_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+  start_port=$(grep -o "HY_HOPPING_START='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+  end_port=$(grep -o "HY_HOPPING_END='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+  # IPv4
+  iptables -t nat -D PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
+  # IPv6
+  ip6tables -t nat -D PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
+
+  sed -i "s/HY_HOPPING_START='[^']*'/HY_HOPPING_START='0'/" /root/sbox/config
+  sed -i "s/HY_HOPPING_END='[^']*'/HY_HOPPING_END='0'/" /root/sbox/config
+  sed -i "s/HY_HOPPING='TRUE'/HY_HOPPING=FALSE/" /root/sbox/config
+
+
+}
 
 # 作者介绍
 print_with_delay "Reality Hysteria2 二合一脚本 by 绵阿羊" 0.03
@@ -1214,9 +1273,10 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
     green "5. 一键开启bbr"
     green "6. warp开启/关闭(v6解锁奈飞和openai)"
     green "7. 重启argo隧道"
+    green "8. hysteria2端口跳跃"
     green "0. 卸载"
     echo ""
-    read -p "请输入对应数字 (0-6): " choice
+    read -p "请输入对应数字 (0-8): " choice
 
     case $choice in
       1)
@@ -1242,11 +1302,9 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           green "2. 更新sing-box内核"
           green "3. 查看sing-box状态"
           green "4. 查看sing-box实时日志"
+          green "5. 查看sing-box服务端配置"
           echo ""
-          read -p "请输入对应数字（1-4）: " user_input
-          echo ""
-          # 调用函数并传递用户输入的数字作为参数
-          process_singbox "$user_input"
+          read -p "请输入对应数字（1-5）: " user_input
           exit 0
           ;;
       5)
@@ -1255,17 +1313,22 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           ;;
       6)
           iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
-          read -p "注意：此操作会覆盖原有分流配置，输入y继续? (y/n): " confirm
-          if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+
               if [ "$iswarp" = "FALSE" ]; then
-                  warp_enable
+                  yellow "warp分流未开启，准备开启"
+                  read -p "是否开启? (y/n): " confirm
+                  if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+                    warp_enable
+                  fi
               else
-                  warp_disable
+                  yellow "warp分流已经开启，是否删除warp路由规则"
+                  read -p "注意：此操作会覆盖原有分流配置，输入y继续? (y/n): " confirm
+                  if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+                    warp_disable
+                  fi
               fi
               echo "配置文件更新成功"
-          else
-              echo "退出"
-          fi
+
           exit 0
           ;;
       7)
@@ -1273,6 +1336,50 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           systemctl start argo
           echo "重新启动完成，查看新的客户端信息"
           show_client_configuration
+          exit 0
+          ;;
+      8)
+          ishopping=$(grep '^HY_HOPPING=' /root/sbox/config | cut -d'=' -f2)
+
+          if [ "$ishopping" = "FALSE" ]; then
+              # 开启端口跳跃
+              echo "开始设置端口跳跃范围"
+              enable_hy2hopping
+              
+          else
+              yellow "端口跳跃已开启"
+              echo ""
+              green "请选择选项："
+              echo ""
+              green "1. 关闭端口跳跃"
+              green "2. 重新设置"
+              green "3. 查看规则"
+              echo ""
+              read -p "请输入对应数字（1-3）: " hopping_input
+              echo ""
+              case $hopping_input in
+                1)
+                  disable_hy2hopping
+                  echo "端口跳跃规则已删除"
+                  ;;
+                2)
+                  disable_hy2hopping
+                  echo "端口跳跃规则已删除"
+                  echo "开始重新设置端口跳跃"
+                  enable_hy2hopping
+                  ;;
+                3)
+                  # 查看IPv4的NAT规则
+                  iptables -t nat -L -n -v | grep "udp"
+                  # 查看IPv6的NAT规则
+                  ip6tables -t nat -L -n -v | grep "udp"
+                  ;;
+                *)
+                  echo "无效的选项"
+                  ;;
+              esac
+          fi
+
           exit 0
           ;;
       0)
@@ -1400,6 +1507,9 @@ REALITY_SERVER_NAME='$reality_server_name'
 HY_PORT='$hy_port'
 HY_SERVER_NAME='$hy_server_name'
 HY_PASSWORD='$hy_password'
+HY_HOPPING=FALSE
+HY_HOPPING_START='0'
+HY_HOPPING_END='0'
 # Vmess
 VMESS_PORT=$vmess_port
 VMESS_UUID='$vmess_uuid'
@@ -1563,7 +1673,7 @@ if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
     systemctl restart sing-box
     create_shortcut
     show_client_configuration
-
+    mianyang
 
 else
     echo "配置错误"

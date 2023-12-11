@@ -1,9 +1,15 @@
-# 12.10更新
-由于需求，新添加了warp解锁功能，输入mianyang，输入6。
+- 强烈建议开启bbr加速，可大幅加快节点reality和vmess节点的速度
+- 安装完成后终端输入 mianyang 可再次调用本脚本
 
-目前加了openai和奈飞，默认使用warp v6解锁，个人测试下来解锁的很舒畅。[warp解锁参考文章](https://github.com/chika0801/sing-box-examples/blob/main/wireguard.md)
+# 12.11更新
+由于需求，新添加了warp解锁功能，输入mianyang，查看。
+由于需求，新添加了端口跳跃功能，输入mianyang，查看。
 
-如需添加其他分流网站，**建议手动修改配置文件**，更加灵活，搭配1.8.0的碎片geo singbox，个性化更高
+目前加了openai和奈飞，默认使用warp v6解锁，个人测试下来解锁的很舒畅。
+
+[warp解锁参考文章](https://github.com/chika0801/sing-box-examples/blob/main/wireguard.md)
+
+如需添加其他分流网站，**建议手动修改配置文件**，更加灵活，搭配1.8.0的碎片geo singbox，个性化更高，教程如下：
 
 <details>
   <summary>点击展开/折叠</summary>
@@ -63,10 +69,6 @@ nano /root/sbox/sbconfig_server.json
       
 ```
 </details>
-
-
-- 强烈建议开启bbr加速，可大幅加快节点reality和vmess节点的速度
-- 安装完成后终端输入 mianyang 可再次调用本脚本
 
 # 简介
 - Reality Hysteria2 （vmess ws）一键安装脚本
