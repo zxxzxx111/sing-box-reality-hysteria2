@@ -3,7 +3,8 @@
 
 # 12.11更新
 
-- 新添加了warp解锁功能（默认openai和奈飞），输入mianyang，查看。如需手动添加分流，往下翻。
+- 全面适配sing-box1.8.0
+- 新添加了warp解锁功能（默认openai和奈飞，可切换为全局warp接管解锁all），输入mianyang，查看。
 - 新添加了hysteria2端口跳跃功能，输入mianyang，查看。
 
 # 简介
@@ -58,7 +59,7 @@ nano /root/sbox/sbconfig_server.json
 
 修改route 块下的内容，比如添加一个pornhub的例子：
 ```json
-  
+      "final": "direct", 
       "rules": [
         {
           "rule_set": "geosite-openai",

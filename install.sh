@@ -932,6 +932,7 @@ warp_enable(){
     # Command to modify the JSON configuration in-place
 jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" '
     .route = {
+      "final": "direct",
       "rules": [
         {
           "rule_set": "geosite-openai",
@@ -976,6 +977,18 @@ jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" '
         "tag": "warp-IPv6-out",
         "detour": "wireguard-out",
         "domain_strategy": "ipv6_only"
+      },
+      {
+        "type": "direct",
+        "tag": "warp-IPv6-prefer-out",
+        "detour": "wireguard-out",
+        "domain_strategy": "prefer_ipv6"
+      },
+      {
+        "type": "direct",
+        "tag": "warp-IPv4-prefer-out",
+        "detour": "wireguard-out",
+        "domain_strategy": "prefer_ipv4"
       },
       {
         "type": "wireguard",
@@ -1122,7 +1135,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
     green "3. 显示客户端配置"
     green "4. sing-box基础操作"
     green "5. 一键开启bbr"
-    green "6. warp开启/关闭(v6解锁奈飞和openai)"
+    green "6. warp解锁操作"
     green "7. hysteria2端口跳跃"
     green "0. 卸载"
     echo ""
@@ -1174,11 +1187,42 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
                     warp_enable
                   fi
               else
-                  yellow "warp分流已经开启，是否删除warp路由规则"
+                  yellow "warp分流已经开启"
+                  echo ""
+                  green "请选择选项："
+                  echo ""
+                  green "1. 切换为全局warp接管（ipv6优先，推荐）"
+                  green "2. 切换为全局warp接管（ipv4优先）"
+                  green "3. 手动添加规则（教程）"                  
+                  green "4. 删除warp分流"
+                  echo ""
+                  read -p "请输入对应数字（1-3）: " warp_input
+              case $warp_input in
+                1)
+                  #切换为全局接管
+                  jq '.route.final = "warp-IPv6-prefer-out"' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
+                  ;;
+                2)
+                  #切换为v4优先全局接管
+                  jq '.route.final = "warp-IPv4-prefer-out"' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
+                  ;;
+                3)
+                  #手动添加warp分流
+                  echo "用脚本实现实在过于繁琐，远不如自己手动配置方便推荐阅读：https://github.com/vveg26/sing-box-reality-hysteria2#关于warp解锁教程"
+                  ;;
+                4)
+                  #切换为全局接管
                   read -p "注意：此操作会覆盖原有分流配置，输入y继续? (y/n): " confirm
                   if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
                     warp_disable
                   fi
+                  ;;
+                *)
+                  echo "无效的选项"
+                  ;;
+              esac
+
+
               fi
               echo "配置文件更新成功"
 
