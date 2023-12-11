@@ -58,7 +58,7 @@ nano /root/sbox/sbconfig_server.json
       "final": "direct", 
       "rules": [
         {
-          "rule_set": ["geosite-openai","geosite-netflix"]
+          "rule_set": ["geosite-openai","geosite-netflix"],
           "outbound": "warp-IPv6-out"
         },
         {

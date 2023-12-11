@@ -935,7 +935,7 @@ jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" '
       "final": "direct",
       "rules": [
         {
-          "rule_set": ["geosite-openai","geosite-netflix"]
+          "rule_set": ["geosite-openai","geosite-netflix"],
           "outbound": "warp-IPv6-out"
         },
         {
