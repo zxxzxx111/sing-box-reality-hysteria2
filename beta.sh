@@ -45,7 +45,7 @@ show_notice() {
 # 安装依赖
 install_base(){
   # 安装qrencode jq
-  local packages=("qrencode" "jq")
+  local packages=("qrencode" "jq" "iptables")
   for package in "${packages[@]}"; do
     if ! command -v "$package" &> /dev/null; then
       echo "正在安装 $package..."
@@ -1221,52 +1221,23 @@ process_singbox() {
 enable_hy2hopping(){
 
     hy_current_port=$(grep -o "HY_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
-    read -p "选择IPv版本 (输入4或6，默认为4): " -r ip_version
-    ip_version=${ip_version:-4}
+    read -p "输入UDP端口范围的起始值(默认20000): " -r start_port
+    start_port=${start_port:-20000}
+    read -p "输入UDP端口范围的结束值(默认30000): " -r end_port
+    end_port=${end_port:-30000}
+    iptables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
+    ip6tables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
 
-    if [ "$ip_version" == "4" ]; then
-        read -p "输入UDP端口范围的起始值(默认20000): " -r start_port
-        start_port=${start_port:-20000}
+    sed -i "s/HY_HOPPING=FALSE/HY_HOPPING='TRUE'/" /root/sbox/config
 
-        read -p "输入UDP端口范围的结束值(默认30000): " -r end_port
-        end_port=${end_port:-30000}
 
-        iptables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
-
-        sed -i "s/HY_HOPPING_START='[^']*'/HY_HOPPING_START='$start_port'/" /root/sbox/config
-        sed -i "s/HY_HOPPING_END='[^']*'/HY_HOPPING_END='$end_port'/" /root/sbox/config
-        sed -i "s/HY_HOPPING=FALSE/HY_HOPPING='TRUE'/" /root/sbox/config
-        echo "IPv4规则已设置：iptables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port"
-    elif [ "$ip_version" == "6" ]; then
-        read -p "输入UDP端口范围的起始值(默认20000): " -r start_port
-        start_port=${start_port:-20000}
-
-        read -p "输入UDP端口范围的结束值(默认30000): " -r end_port
-        end_port=${end_port:-30000}
-
-        ip6tables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
-
-        sed -i "s/HY_HOPPING_START='[^']*'/HY_HOPPING_START='$start_port'/" /root/sbox/config
-        sed -i "s/HY_HOPPING_END='[^']*'/HY_HOPPING_END='$end_port'/" /root/sbox/config
-
-        sed -i "s/HY_HOPPING=FALSE/HY_HOPPING='TRUE'/" /root/sbox/config
-        echo "IPv6规则已设置：ip6tables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port"
-    else
-        echo "无效的选择。请输入 '4' 或 '6'。"
-    fi
 }
 
 disable_hy2hopping(){
   hy_current_port=$(grep -o "HY_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
-  start_port=$(grep -o "HY_HOPPING_START='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
-  end_port=$(grep -o "HY_HOPPING_END='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
-  # IPv4
-  iptables -t nat -D PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
-  # IPv6
-  ip6tables -t nat -D PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
 
-  sed -i "s/HY_HOPPING_START='[^']*'/HY_HOPPING_START='0'/" /root/sbox/config
-  sed -i "s/HY_HOPPING_END='[^']*'/HY_HOPPING_END='0'/" /root/sbox/config
+  iptables -t nat -F PREROUTING >/dev/null 2>&1
+  ip6tables -t nat -F PREROUTING >/dev/null 2>&1
   sed -i "s/HY_HOPPING='TRUE'/HY_HOPPING=FALSE/" /root/sbox/config
 
 
@@ -1561,8 +1532,7 @@ HY_PORT='$hy_port'
 HY_SERVER_NAME='$hy_server_name'
 HY_PASSWORD='$hy_password'
 HY_HOPPING=FALSE
-HY_HOPPING_START='0'
-HY_HOPPING_END='0'
+
 # Vmess
 VMESS_PORT=$vmess_port
 VMESS_UUID='$vmess_uuid'

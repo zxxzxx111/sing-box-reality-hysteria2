@@ -36,30 +36,7 @@ print_with_delay "Reality Grpc by 绵阿羊" 0.03
 echo ""
 echo ""
 
-# 安装依赖
-install_base(){
-  # 安装qrencode
-  local packages=("qrencode")
-  for package in "${packages[@]}"; do
-    if ! command -v "$package" &> /dev/null; then
-      echo "正在安装 $package..."
-      if [ -n "$(command -v apt)" ]; then
-        sudo apt update > /dev/null 2>&1
-        sudo apt install -y "$package" > /dev/null 2>&1
-      elif [ -n "$(command -v yum)" ]; then
-        sudo yum install -y "$package"
-      elif [ -n "$(command -v dnf)" ]; then
-        sudo dnf install -y "$package"
-      else
-        echo "无法安装 $package。请手动安装，并重新运行脚本。"
-        exit 1
-      fi
-      echo "$package 已安装。"
-    else
-      echo "$package 已经安装。"
-    fi
-  done
-}
+
 # 创建快捷方式
 create_shortcut() {
   cat > /root/sbox/mianyang.sh << EOF

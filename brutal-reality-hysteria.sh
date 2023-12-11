@@ -68,7 +68,7 @@ install_base(){
 create_shortcut() {
   cat > /root/sbox/mianyang.sh << EOF
 #!/usr/bin/env bash
-bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/install.sh) \$1
+bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/brutal-reality-hysteria.sh) \$1
 EOF
   chmod +x /root/sbox/mianyang.sh
   ln -sf /root/sbox/mianyang.sh /usr/bin/mianyang
@@ -126,6 +126,7 @@ show_client_configuration() {
   # reality
   # reality当前端口
   reality_port=$(grep -o "REALITY_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+  reality_brutal_port=$(grep -o "REALITY_BRUTAL_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
   # 当前偷取的网站
   reality_server_name=$(grep -o "REALITY_SERVER_NAME='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
   # 当前reality uuid
@@ -134,6 +135,8 @@ show_client_configuration() {
   public_key=$(grep -o "PUBLIC_KEY='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
   # 获取short_id
   short_id=$(grep -o "SHORT_ID='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+  
+  brutal_up=$(grep -o "BRUTAL_UP='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
 
   #聚合reality
   reality_link="vless://$reality_uuid@$server_ip:$reality_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reality_server_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#SING-BOX-REALITY"
@@ -240,7 +243,7 @@ dns:
       - 240.0.0.0/4
 
 proxies:        
-  - name: Reality
+  - name: Reality-Vision
     type: vless
     server: $server_ip
     port: $reality_port
@@ -254,7 +257,30 @@ proxies:
     reality-opts:
       public-key: $public_key
       short-id: $short_id
-
+  - name: Reality-Brutal
+    type: vless
+    server: $server_ip
+    port: $reality_brutal_port
+    uuid: $reality_uuid
+    network: tcp
+    udp: true
+    tls: true
+    flow: 
+    servername: $reality_server_name
+    client-fingerprint: chrome
+    reality-opts:
+      public-key: $public_key
+      short-id: $short_id
+    smux:
+      enabled: true
+      protocol: h2mux
+      max-connections: 1
+      min-streams: 4
+      padding: true
+      brutal-opts:
+        enabled: true
+        up: 50
+        down: $brutal_up
   - name: Hysteria2
     type: hysteria2
     server: $server_ip
@@ -273,14 +299,16 @@ proxy-groups:
     type: select
     proxies:
       - 自动选择
-      - Reality
+      - Reality-Vision
+      - Reality-Brutal
       - Hysteria2
       - DIRECT
 
   - name: 自动选择
     type: url-test #选出延迟最低的机场节点
     proxies:
-      - Reality
+      - Reality-Vision
+      - Reality-Brutal
       - Hysteria2
     url: "http://www.gstatic.com/generate_204"
     interval: 300
@@ -407,7 +435,8 @@ cat << EOF
         "auto",
         "direct",
         "sing-box-reality",
-        "sing-box-hysteria2"
+        "sing-box-hysteria2",
+        "sing-box-reality-brutal"
       ]
     },
     {
@@ -451,6 +480,39 @@ cat << EOF
             }
         },
     {
+      "type": "vless",
+      "tag": "sing-box-reality-brutal",
+      "uuid": "$reality_uuid",
+      "packet_encoding": "xudp",
+      "server": "$server_ip",
+      "server_port": $reality_brutal_port,
+      "flow": "",
+      "tls": {
+        "enabled": true,
+        "server_name": "$reality_server_name",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "$public_key",
+          "short_id": "$short_id"
+        }
+      },
+    "multiplex": {
+        "enabled": true,
+        "protocol": "h2mux",
+        "max_connections": 1,
+        "min_streams": 4,
+        "padding": true,
+        "brutal": {
+            "enabled": true,
+            "up_mbps": 50, //上行速度，windows，macos不会生效所以可随便写
+            "down_mbps": $brutal_up //下行速度，对应服务器的下行速度，当然可自行修改
+        }
+    },
+    {
       "tag": "direct",
       "type": "direct"
     },
@@ -467,7 +529,8 @@ cat << EOF
       "type": "urltest",
       "outbounds": [
         "sing-box-reality",
-        "sing-box-hysteria2"
+        "sing-box-hysteria2",
+        "sing-box-reality-brutal"
       ],
       "url": "http://www.gstatic.com/generate_204",
       "interval": "1m",
@@ -672,7 +735,8 @@ cat << EOF
         "auto",
         "direct",
         "sing-box-reality",
-        "sing-box-hysteria2"
+        "sing-box-hysteria2",
+        "sing-box-reality-brutal"
       ]
     },
     {
@@ -716,6 +780,39 @@ cat << EOF
             }
         },
     {
+      "type": "vless",
+      "tag": "sing-box-reality-brutal",
+      "uuid": "$reality_uuid",
+      "packet_encoding": "xudp",
+      "server": "$server_ip",
+      "server_port": $reality_brutal_port,
+      "flow": "",
+      "tls": {
+        "enabled": true,
+        "server_name": "$reality_server_name",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "$public_key",
+          "short_id": "$short_id"
+        }
+      },
+    "multiplex": {
+        "enabled": true,
+        "protocol": "h2mux",
+        "max_connections": 1,
+        "min_streams": 4,
+        "padding": true,
+        "brutal": {
+            "enabled": true,
+            "up_mbps": 50, //上行速度，windows，macos不会生效所以可随便写
+            "down_mbps": $brutal_up //下行速度，对应服务器的下行速度，当然可自行修改
+        }
+    },
+    {
       "tag": "direct",
       "type": "direct"
     },
@@ -732,7 +829,8 @@ cat << EOF
       "type": "urltest",
       "outbounds": [
         "sing-box-reality",
-        "sing-box-hysteria2"
+        "sing-box-hysteria2",
+        "sing-box-reality-brutal"
       ],
       "url": "http://www.gstatic.com/generate_204",
       "interval": "1m",
@@ -835,7 +933,7 @@ enable_bbr() {
 #修改sb
 modify_singbox() {
     #modifying reality configuration
-    show_notice "开始修改reality端口号和域名"
+    show_notice "开始修改vision reality端口号和域名"
     reality_current_port=$(grep -o "REALITY_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
     while true; do
         read -p "请输入想要修改的端口号 (当前端口号为 $reality_current_port): " reality_port
@@ -849,9 +947,31 @@ modify_singbox() {
             break
         fi
     done
+    show_notice "开始修改brutal reality端口号和域名"
+    reality_brutal_current_port=$(grep -o "REALITY_BRUTAL_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+    while true; do
+        read -p "请输入想要修改的端口号 (当前端口号为 $reality_brutal_current_port): " reality_brutal_port
+        reality_brutal_port=${reality_brutal_port:-$reality_brutal_current_port}
+        if [ "$reality_brutal_port" -eq "$reality_brutal_current_port" ]; then
+            break
+        fi
+        if ss -tuln | grep -q ":$reality_brutal_port\b"; then
+            echo "端口 $reality_brutal_port 已经被占用，请选择其他端口。"
+        else
+            break
+        fi
+    done
     reality_current_server_name=$(grep -o "REALITY_SERVER_NAME='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
     read -p "请输入想要偷取的域名 (当前域名为 $reality_current_server_name): " reality_server_name
     reality_server_name=${reality_server_name:-$reality_current_server_name}
+
+        current_up=$(grep -o "BRUTAL_UP='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+    read -p "请输入上行带宽up，对应客户端下行带宽 (当前为 $current_up): " brutal_up
+    brutal_up=${brutal_up:-$current_up}
+    current_down=$(grep -o "BRUTAL_DOWN='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+    read -p "请输入下行带宽down (当前为 $current_down): " brutal_down
+    brutal_down=${brutal_down:-$current_down}
+    echo ""
     echo ""
     # modifying hysteria2 configuration
     show_notice "开始修改hysteria2端口号"
@@ -872,20 +992,28 @@ modify_singbox() {
 
     # 修改sing-box
     jq --arg reality_port "$reality_port" \
+    --arg reality_brutal_port "$reality_brutal_port" \
     --arg hy_port "$hy_port" \
     --arg reality_server_name "$reality_server_name" \
+    --arg brutal_up "$brutal_up" \
+    --arg brutal_down "$brutal_down" \
     '
-    (.inbounds[] | select(.type == "vless") | .listen_port) |= ($reality_port | tonumber) |
+    (.inbounds[0] | select(.type == "vless") | .listen_port) |= ($reality_port | tonumber) |
+    (.inbounds[2] | select(.type == "vless") | .listen_port) |= ($reality_brutal_port | tonumber) |
     (.inbounds[] | select(.type == "hysteria2") | .listen_port) |= ($hy_port | tonumber) |
     (.inbounds[] | select(.type == "vless") | .tls.server_name) |= $reality_server_name |
-    (.inbounds[] | select(.type == "vless") | .tls.reality.handshake.server) |= $reality_server_name
+    (.inbounds[] | select(.type == "vless") | .tls.reality.handshake.server) |= $reality_server_name |
+    (.inbounds[2] | select(.type == "vless") | .multiplex.brutal.up_mbps) |= ($brutal_up | tonumber) |
+    (.inbounds[2] | select(.type == "vless") | .multiplex.brutal.down_mbps) |= ($brutal_down | tonumber)
     ' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
+
 
     #修改config
     sed -i "s/REALITY_PORT='[^']*'/REALITY_PORT='$reality_port'/" /root/sbox/config
     sed -i "s/REALITY_SERVER_NAME='[^']*'/REALITY_SERVER_NAME='$reality_server_name'/" /root/sbox/config
     sed -i "s/HY_PORT='[^']*'/HY_PORT='$hy_port'/" /root/sbox/config
-
+    sed -i "s/BRUTAL_UP='[^']*'/BRUTAL_UP='$brutal_up'/" /root/sbox/config
+    sed -i "s/BRUTAL_DOWN='[^']*'/BRUTAL_DOWN='$brutal_down'/" /root/sbox/config
     # Restart sing-box service
     systemctl restart sing-box
 }
@@ -1087,7 +1215,6 @@ enable_hy2hopping(){
 disable_hy2hopping(){
   hy_current_port=$(grep -o "HY_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
 
-
   iptables -t nat -F PREROUTING >/dev/null 2>&1
   ip6tables -t nat -F PREROUTING >/dev/null 2>&1
 
@@ -1095,7 +1222,9 @@ disable_hy2hopping(){
 
 
 }
-
+install_brutal(){
+  bash <(curl -fsSL https://tcp.hy2.sh/)
+}
 # 作者介绍
 print_with_delay "Reality Hysteria2 二合一脚本 by 绵阿羊" 0.03
 echo ""
@@ -1266,7 +1395,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           ;;
 	esac
 	fi
-
+install_brutal
 mkdir -p "/root/sbox/"
 
 download_singbox
@@ -1292,7 +1421,7 @@ echo "uuid和短id 生成完成"
 echo ""
 # Ask for listen port
 while true; do
-    read -p "请输入Reality端口号 (default: 443): " reality_port
+    read -p "请输入Vision Reality端口号 (default: 443): " reality_port
     reality_port=${reality_port:-443}
 
     # 检测端口是否被占用
@@ -1303,6 +1432,24 @@ while true; do
     fi
 done
 echo ""
+while true; do
+    read -p "请输入Brutal Reality端口号 (default: 1443): " reality_brutal_port
+    reality_brutal_port=${reality_brutal_port:-1443}
+
+    # 检测端口是否被占用
+    if ss -tuln | grep -q ":$reality_brutal_port\b"; then
+        echo "端口 $reality_brutal_port 已经被占用，请重新输入。"
+    else
+        break
+    fi
+done
+
+echo ""
+read -p "请输入brutal 上行up带宽，对应客户端的下行带宽 (default: 100): " brutal_up
+brutal_up=${brutal_up:-100}
+read -p "请输入下行down带宽 (default: 1000): " brutal_down
+brutal_down=${brutal_down:-1000}
+
 # Ask for server name (sni)
 read -p "请输入想要偷取的域名,需要支持tls1.3 (default: itunes.apple.com): " reality_server_name
 reality_server_name=${reality_server_name:-itunes.apple.com}
@@ -1352,6 +1499,7 @@ PUBLIC_KEY='$public_key'
 SHORT_ID='$short_id'
 REALITY_UUID='$reality_uuid'
 REALITY_PORT='$reality_port'
+REALITY_BRUTAL_PORT='$reality_brutal_port'
 REALITY_SERVER_NAME='$reality_server_name'
 # Hy2
 HY_PORT='$hy_port'
@@ -1360,8 +1508,15 @@ HY_PASSWORD='$hy_password'
 
 HY_HOPPING=FALSE
 
+
 # Warp
 WARP_ENABLE=FALSE
+
+# Brutal
+
+BRUTAL_UP='$brutal_up'
+BRUTAL_DOWN='$brutal_down'
+
 EOF
 
 
@@ -1420,6 +1575,42 @@ cat > /root/sbox/sbconfig_server.json << EOF
             ],
             "certificate_path": "/root/sbox/self-cert/cert.pem",
             "key_path": "/root/sbox/self-cert/private.key"
+        }
+    },
+    {
+      "sniff": true,
+      "sniff_override_destination": true,
+      "type": "vless",
+      "tag": "vless-in",
+      "listen": "::",
+      "listen_port": $reality_brutal_port,
+      "users": [
+        {
+          "uuid": "$reality_uuid",
+          "flow": ""
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "server_name": "$reality_server_name",
+        "reality": {
+          "enabled": true,
+          "handshake": {
+            "server": "$reality_server_name",
+            "server_port": 443
+          },
+          "private_key": "$private_key",
+          "short_id": ["$short_id"]
+        }
+      },
+        "multiplex": {
+            "enabled": true,
+            "padding": true,
+            "brutal": {
+                "enabled": true,
+                "up_mbps": $brutal_up,
+                "down_mbps": $brutal_down
+            }
         }
     }
   ],
