@@ -58,14 +58,14 @@ nano /root/sbox/sbconfig_server.json
       "final": "direct", 
       "rules": [
         {
-          "rule_set": "geosite-openai",
-          "outbound": "warp-IPv6-out" //可改为warp-IPv4-out
+          "rule_set": ["geosite-openai","geosite-netflix"]
+          "outbound": "warp-IPv6-out"
         },
         {
           "rule_set": "geosite-netflix",
-          "outbound": "warp-IPv6-out" //可改为warp-IPv4-out
+          "outbound": "warp-IPv6-out" 
         },
-        { //此处为添加内容********，rule_set对应下面tag
+        { //此处为添加内容********，或者在上面的数组中添加，rule_set对应下面tag
           "rule_set": "geosite-pornhub",
           "outbound": "warp-IPv6-out" 
         },
@@ -89,6 +89,13 @@ nano /root/sbox/sbconfig_server.json
           "type": "remote",
           "format": "binary",
           "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/netflix.srs",
+          "download_detour": "direct"
+        },
+        {
+          "tag": "geosite-disney",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/disney.srs",
           "download_detour": "direct"
         },
         { //此处为添加内容******，tag对应上面

@@ -935,7 +935,7 @@ jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" '
       "final": "direct",
       "rules": [
         {
-          "rule_set": "geosite-openai",
+          "rule_set": ["geosite-openai","geosite-netflix"]
           "outbound": "warp-IPv6-out"
         },
         {
@@ -962,6 +962,13 @@ jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" '
           "type": "remote",
           "format": "binary",
           "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/netflix.srs",
+          "download_detour": "direct"
+        },
+        {
+          "tag": "geosite-disney",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/disney.srs",
           "download_detour": "direct"
         }
       ]
