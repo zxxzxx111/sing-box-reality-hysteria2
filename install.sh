@@ -1201,10 +1201,12 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
                 1)
                   #切换为全局接管
                   jq '.route.final = "warp-IPv6-prefer-out"' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
+                  systemctl reload sing-box
                   ;;
                 2)
                   #切换为v4优先全局接管
                   jq '.route.final = "warp-IPv4-prefer-out"' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
+                  systemctl reload sing-box
                   ;;
                 3)
                   #手动添加warp分流
