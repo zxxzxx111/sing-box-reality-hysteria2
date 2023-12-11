@@ -20,25 +20,31 @@ yellow() { echo -e "\033[33m\033[01m$*\033[0m"; }   # 黄色
 show_notice() {
     local message="$1"
 
-    local green_bg="\e[48;5;34m"
-    local white_fg="\e[97m"
     local reset="\e[0m"
+    local bold="\e[1m"
 
-    echo -e "${green_bg}${white_fg}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${reset}"
-    echo -e "${white_fg}┃${reset}                                                                                             "
-    echo -e "${white_fg}┃${reset}                                   ${message}                                                "
-    echo -e "${white_fg}┃${reset}                                                                                             "
-    echo -e "${green_bg}${white_fg}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${reset}"
+    local terminal_width=$(tput cols)
+    local line=""
+
+    local padding=$(( (terminal_width - ${#message}) / 2 ))
+    local padded_message="$(printf "%*s%s" $padding '' "$message")"
+
+    for ((i=1; i<=terminal_width; i++)); do
+        line+="*"
+    done
+
+    red "${bold}${line}${reset}"
+    echo ""
+    red "${bold}${padded_message}${reset}"
+    echo ""
+    red "${bold}${line}${reset}"
 }
 
-# 作者介绍
-print_with_delay "Reality Hysteria2 wss 三合一脚本 by 绵阿羊" 0.03
-echo ""
-echo ""
+
 
 # 安装依赖
 install_base(){
-  # 安装qrencode
+  # 安装qrencode jq
   local packages=("qrencode" "jq")
   for package in "${packages[@]}"; do
     if ! command -v "$package" &> /dev/null; then
@@ -56,7 +62,7 @@ install_base(){
       fi
       echo "$package 已安装。"
     else
-      echo "$package 已经安装。"
+      echo "$package 已安装。"
     fi
   done
 }
@@ -148,25 +154,17 @@ show_client_configuration() {
   reality_link="vless://$reality_uuid@$server_ip:$reality_port?encryption=none&flow=xtls-rprx-vision&security=reality&sni=$reality_server_name&fp=chrome&pbk=$public_key&sid=$short_id&type=tcp&headerType=none#SING-BOX-REALITY"
   echo ""
   echo ""
-  show_notice "$(red "Reality 通用链接和二维码和通用参数")" 
+  show_notice "Vision Reality通用链接 二维码 通用参数" 
   echo ""
-  echo ""
-  red "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━Reality 通用链接如下━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
+  green "通用链接如下"
+  echo "" 
   echo "$reality_link"
   echo ""
-  red "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  echo "" 
-  red "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━Reality 二维码如下━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  green "二维码如下"
   echo ""
   qrencode -t UTF8 $reality_link
   echo ""
-  red "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
-  echo ""
-  echo ""
-  red "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━Reality 客户端通用参数-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  green "客户端通用参数如下"
   echo ""
   echo "服务器ip: $server_ip"
   echo "监听端口: $reality_port"
@@ -174,9 +172,6 @@ show_client_configuration() {
   echo "域名SNI: $reality_server_name"
   echo "Public Key: $public_key"
   echo "Short ID: $short_id"
-  echo ""
-  red "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
   echo ""
 
   # hy port
@@ -191,35 +186,25 @@ show_client_configuration() {
 
   echo ""
   echo "" 
-  show_notice "$(green "Hysteria2 通用链接和二维码和通用参数")"
+  show_notice "Hysteria2通用链接 二维码 通用参数" 
   echo ""
+  green "通用链接如下"
   echo "" 
-  green "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━hysteria2 通用链接格式━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
   echo "$hy2_link"
-  echo ""
-  green "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "" 
-  echo ""
-  green "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━hysteria2 二维码━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  green "二维码如下"
   echo ""
   qrencode -t UTF8 $hy2_link  
   echo ""
-  green "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""  
+  green "客户端通用参数如下"
   echo ""
-  green "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━Hysteria2 客户端通用参数━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" 
-  echo "" 
   echo "服务器ip: $server_ip"
   echo "端口号: $hy_port"
   echo "密码password: $hy_password"
   echo "域名SNI: $hy_server_name"
   echo "跳过证书验证（允许不安全）: True"
   echo ""
-  green "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  green "Hysteria2 官方yaml如下" 
   echo ""
-  echo ""
-  green "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━Hysteria2 官方内核yaml文件（可搭配v2rayN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" 
 cat << EOF
 
 server: $server_ip:$hy_port
@@ -236,8 +221,8 @@ socks5:
   listen: 127.0.0.1:50000
 
 EOF
-  green "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  sleep 3
+  echo "" 
+  sleep 2
   cat /root/sbox/argo.log | grep trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}' | xargs -I {} sed -i "s/ARGO_DOMAIN='.*'/ARGO_DOMAIN='{}'/g" /root/sbox/config
   rm -f /root/sbox/argo.log
   #argo域名
@@ -250,42 +235,30 @@ EOF
   vmessws_link='vmess://'$(echo '{"add":"speed.cloudflare.com","aid":"0","host":"'$argo_domain'","id":"'$vmess_uuid'","net":"ws","path":"'${ws_path}?ed=2048'","port":"80","ps":"sing-box-vmess","tls":"","type":"none","v":"2"}' | base64 -w 0)
   echo ""
   echo ""
-  show_notice "$(yellow "vmess ws(s) 通用链接和二维码")"
+  show_notice "vmess ws(s) 通用链接和二维码"
   echo ""
   echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━以下为vmess wss链接，替换speed.cloudflare.com为自己的优选ip可获得极致体验━━━━━━━━━━━━━━━━━━━━━━"
+  yellow "vmess wss通用链接,替换speed.cloudflare.com为自己的优选ip可获得极致体验"
   echo ""
   echo "$vmesswss_link"
   echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━vmess wss 二维码━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  yellow "vmess wss二维码"
   echo ""
   qrencode -t UTF8 $vmesswss_link
   echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
   red  "上述链接为wss 端口 443 可改为 2053 2083 2087 2096 8443"
   echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━━━━以下为vmess ws链接，替换speed.cloudflare.com为自己的优选ip可获得极致体验━━━━━━━━━━━━━━━━━━━━"
+  yellow "vmess ws链接，替换speed.cloudflare.com为自己的优选ip可获得极致体验"
   echo ""
   echo "$vmessws_link"
   echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━vmess ws 二维码━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  yellow "vmess ws 二维码"
   echo ""
   qrencode -t UTF8 $vmessws_link
   echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
   red "上述链接为ws 端口 80 可改为 8080 8880 2052 2082 2086 2095" 
   echo ""
-  yellow "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
-
 
   show_notice "clash-meta配置参数"
 cat << EOF
@@ -1179,102 +1152,133 @@ warp_disable(){
     jq 'del(.route) | del(.outbounds[] | select(.tag == "warp-IPv4-out" or .tag == "warp-IPv6-out" or .tag == "wireguard-out"))' "$config_file" > temp_config.json && mv temp_config.json "$config_file"
     sed -i "s/WARP_ENABLE=TRUE/WARP_ENABLE=FALSE/" /root/sbox/config
 }
+#更新singbox
+update_singbox(){
+      green "更新singbox..."
+      download_singbox
+      # 检查配置
+      if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+          green "检查配置文件，启动服务..."
+          systemctl restart sing-box
+      fi
+      echo ""  
+}
+
+process_singbox() {
+    case "$1" in
+        1)
+            green "重启sing-box..."
+            # 检查配置
+            if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+                green "检查配置文件，启动服务..."
+                systemctl restart sing-box
+            fi
+            green "重启完成"
+            ;;
+        2)
+            update_singbox
+            ;;
+        3)
+            echo "singbox基本信息如下："
+            systemctl status sing-box
+            ;;
+        4)
+            echo "singbox日志如下："
+            journalctl -u sing-box -o cat -f
+            ;;
+        *)
+            echo "请输入正确选项: $1"
+            ;;
+    esac
+}
+
+
+# 作者介绍
+print_with_delay "Reality Hysteria2 二合一脚本 by 绵阿羊" 0.03
+echo ""
+echo ""
 
 install_base
 
 # Check if reality.json, sing-box, and sing-box.service already exist
-if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/cloudflared-linux" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
-
-    echo "sing-box-reality-hysteria2已经安装"
+if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/mianyang.sh" ] && [ -f "/usr/bin/mianyang" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
     echo ""
-    echo "请选择选项:"
+    yellow "sing-box-reality-hysteria2已经安装"
     echo ""
-    echo "1. 重新安装"
-    echo "2. 修改配置"
-    echo "3. 显示客户端配置"
-    echo "4. 更新sing-box内核"
-    echo "5. 重启argo隧道"
-    echo "6. 重启sing-box"
-    echo "7. 开启bbr"
-    echo "8. 卸载"
-    echo "9. warp开启/关闭（默认解锁奈飞和chatgpt），有能力可以手动添加更多分流"
+    green "请选择选项:"
     echo ""
-    read -p "Enter your choice (1-9): " choice
+    green "1. 重新安装"
+    green "2. 修改配置"
+    green "3. 显示客户端配置"
+    green "4. sing-box基础操作"
+    green "5. 一键开启bbr"
+    green "6. warp开启/关闭(v6解锁奈飞和openai)"
+    green "7. 重启argo隧道"
+    green "0. 卸载"
+    echo ""
+    read -p "请输入对应数字 (0-6): " choice
 
     case $choice in
       1)
           show_notice "开始卸载..."
-          # Uninstall previous installation
           uninstall_singbox
         ;;
       2)
           #修改sb
           modify_singbox
-          # show client configuration
           show_client_configuration
           exit 0
         ;;
       3)  
-          # show client configuration
           show_client_configuration
           exit 0
-      ;;		
-      8)
-          uninstall_singbox
-          exit 0
-          ;;
-      4)
-          show_notice "更新 Sing-box..."
-          download_singbox
-          # Check configuration and start the service
-          if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
-              echo "Configuration checked successfully. Starting sing-box service..."
-              systemctl restart sing-box
-          fi
-          echo ""  
+      ;;	
+      4)  
+          echo ""
+          echo ""
+          green "请选择选项："
+          echo ""
+          green "1. 重启sing-box"
+          green "2. 更新sing-box内核"
+          green "3. 查看sing-box状态"
+          green "4. 查看sing-box实时日志"
+          echo ""
+          read -p "请输入对应数字（1-4）: " user_input
+          echo ""
+          # 调用函数并传递用户输入的数字作为参数
+          process_singbox "$user_input"
           exit 0
           ;;
       5)
+          enable_bbr
+          exit 0
+          ;;
+      6)
+          iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
+          read -p "注意：此操作会覆盖原有分流配置，输入y继续? (y/n): " confirm
+          if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+              if [ "$iswarp" = "FALSE" ]; then
+                  warp_enable
+              else
+                  warp_disable
+              fi
+              echo "配置文件更新成功"
+          else
+              echo "退出"
+          fi
+          exit 0
+          ;;
+      7)
           systemctl stop argo
           systemctl start argo
           echo "重新启动完成，查看新的客户端信息"
           show_client_configuration
           exit 0
           ;;
-      7)
-          enable_bbr
-          exit 0
-          ;;
-      6)
-          systemctl restart sing-box
-          echo "重启完成"
+      0)
+
+          uninstall_singbox
 	        exit 0
-          ;;
-      9)
-          # Read the value of WARP_ENABLE from the config file
-          iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
-
-          # Display a warning and ask for confirmation
-          read -p "注意：此操作会覆盖原有wg配置和分流配置，输入y继续? (y/n): " confirm
-
-          # Check the user's confirmation
-          if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-              if [ "$iswarp" = "FALSE" ]; then
-                  # Run command 1 when WARP_ENABLE is TRUE
-                  warp_enable
-                  # Add your command 1 here
-              else
-                  # Run command 2 when WARP_ENABLE is FALSE
-                  warp_disable
-                  # Add your command 2 here
-              fi
-              echo "Configuration updated successfully."
-          else
-              echo "No changes were made to the configuration."
-          fi
-
-
-	  exit 0
           ;;
       *)
           echo "Invalid choice. Exiting."
@@ -1552,7 +1556,7 @@ EOF
 
 # Check configuration and start the service
 if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
-    echo "Configuration checked successfully. Starting sing-box service..."
+    echo "检查配置文件，启动服务..."
     systemctl daemon-reload
     systemctl enable sing-box > /dev/null 2>&1
     systemctl start sing-box
@@ -1562,5 +1566,5 @@ if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
 
 
 else
-    echo "Error in configuration. Aborting"
+    echo "配置错误"
 fi

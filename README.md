@@ -1,5 +1,5 @@
 # 12.10更新
-由于需求，新添加了warp解锁功能，输入mianyang，输入8。
+由于需求，新添加了warp解锁功能，输入mianyang，输入6。
 
 目前加了openai和奈飞，默认使用warp v6解锁，个人测试下来解锁的很舒畅。[warp解锁参考文章](https://github.com/chika0801/sing-box-examples/blob/main/wireguard.md)
 
@@ -71,6 +71,21 @@ nano /root/sbox/sbconfig_server.json
 # 简介
 - Reality Hysteria2 （vmess ws）一键安装脚本
   
+
+## 使用教程
+
+### reality和hysteria2 vmess ws三合一脚本
+
+```bash
+bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
+```
+
+### reality hysteria2二合一脚本
+
+```bash
+bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/install.sh)
+```
+
 ## 功能
 
 - 无脑回车一键安装或者自定义安装
@@ -86,19 +101,6 @@ nano /root/sbox/sbconfig_server.json
 |状态|`systemctl status sing-box`|
 |查看日志|`journalctl -u sing-box -o cat -e`|
 |实时日志|`journalctl -u sing-box -o cat -f`|
-## 使用教程
-
-### reality和hysteria2 vmess ws三合一脚本
-
-```bash
-bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/beta.sh)
-```
-
-### reality hysteria2二合一脚本
-
-```bash
-bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/install.sh)
-```
 
 ### hysteria2端口跳跃功能
 singbox和clashmeta表示不会支持端口跳跃。可以手动添加端口跳跃，步骤如下：
