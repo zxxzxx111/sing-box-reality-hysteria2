@@ -939,7 +939,7 @@ jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" '
           "outbound": "warp-IPv6-out"
         },
         {
-          "rule_set": "geosite-netflix",
+          "rule_set": "geosite-disney",
           "outbound": "warp-IPv6-out" 
         },
         {

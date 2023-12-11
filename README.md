@@ -62,7 +62,7 @@ nano /root/sbox/sbconfig_server.json
           "outbound": "warp-IPv6-out"
         },
         {
-          "rule_set": "geosite-netflix",
+          "rule_set": "geosite-disney",
           "outbound": "warp-IPv6-out" 
         },
         { //此处为添加内容********，或者在上面的数组中添加，rule_set对应下面tag
