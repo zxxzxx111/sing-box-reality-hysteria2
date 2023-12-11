@@ -31,14 +31,10 @@ bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/
 - 支持修改reality端口号和域名，hysteria2端口号
 - 无脑生成sing-box，clash-meta，v2rayN，nekoray等通用链接格式
 
-|项目||
-|:--|:--|
-|程序|**/root/sbox/sing-box**|
-|服务端配置|**/root/sbox/sbconfig_server.json**|
-|重启|`systemctl restart sing-box`|
-|状态|`systemctl status sing-box`|
-|查看日志|`journalctl -u sing-box -o cat -e`|
-|实时日志|`journalctl -u sing-box -o cat -f`|
+![](https://img.mareep.net/blog/2023/12/22670b590ded0df4b5e8663878628136.jpg)
+![](https://img.mareep.net/blog/2023/12/389786b320b3b0dd905b90e323483cff.png)
+![](https://img.mareep.net/blog/2023/12/565952a919e87dbdcf76e2f3071562af.png)
+
 
 ### 关于warp解锁教程
 
