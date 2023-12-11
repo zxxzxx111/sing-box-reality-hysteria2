@@ -101,7 +101,7 @@ bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/
 ```
 
 ### hysteria2端口跳跃功能
-端口跳跃争议很大，大部分开发者都觉得这个操作不够优雅，例如singbox和clashmeta就明确表示不会支持端口跳跃。对于Qos的作用其实也有限，所以本脚本不添加，但是可以手动添加端口跳跃，步骤如下：
+singbox和clashmeta表示不会支持端口跳跃。可以手动添加端口跳跃，步骤如下：
 <details>
   <summary>点击展开/折叠</summary>
 
