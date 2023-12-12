@@ -1015,7 +1015,10 @@ modify_singbox() {
     sed -i "s/BRUTAL_UP='[^']*'/BRUTAL_UP='$brutal_up'/" /root/sbox/config
     sed -i "s/BRUTAL_DOWN='[^']*'/BRUTAL_DOWN='$brutal_down'/" /root/sbox/config
     # Restart sing-box service
-    systemctl restart sing-box
+    if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+      echo "检查配置文件成功，重启服务..."
+      systemctl reload sing-box
+    fi
 }
 
 uninstall_singbox() {
@@ -1053,7 +1056,6 @@ warp_enable(){
     v6=$(echo "$output" | grep -oP '"v6": "\K[^"]+' | awk 'NR==2')
     private_key=$(echo "$output" | grep -oP '"private_key": "\K[^"]+')
     reserved=$(echo "$output" | grep -oP '"reserved_str": "\K[^"]+')
-    echo $v6
     # File path of the JSON configuration
     config_file="/root/sbox/sbconfig_server.json"
 
@@ -1143,7 +1145,10 @@ jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" '
 
     sed -i "s/WARP_ENABLE=FALSE/WARP_ENABLE=TRUE/" /root/sbox/config
 
-    systemctl reload sing-box
+    if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+      echo "检查配置文件成功，重启服务..."
+      systemctl reload sing-box
+    fi
 }
 #关闭warp
 warp_disable(){
@@ -1151,6 +1156,11 @@ warp_disable(){
     #删除路由和出战
     jq 'del(.route) | del(.outbounds[] | select(.tag == "warp-IPv4-out" or .tag == "warp-IPv6-out" or .tag == "warp-IPv4-prefer-out" or .tag == "warp-IPv6-prefer-out" or .tag == "wireguard-out"))' "$config_file" > temp_config.json && mv temp_config.json "$config_file"
     sed -i "s/WARP_ENABLE=TRUE/WARP_ENABLE=FALSE/" /root/sbox/config
+
+    if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+          echo "检查配置文件成功，重启服务..."
+          systemctl reload sing-box
+    fi
 }
 #更新singbox
 update_singbox(){
@@ -1198,7 +1208,7 @@ process_singbox() {
 
 # 开启hysteria2端口跳跃
 enable_hy2hopping(){
-
+  echo "开启端口跳跃"
     hy_current_port=$(grep -o "HY_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
     read -p "输入UDP端口范围的起始值(默认20000): " -r start_port
     start_port=${start_port:-20000}
@@ -1213,7 +1223,7 @@ enable_hy2hopping(){
 }
 
 disable_hy2hopping(){
-  hy_current_port=$(grep -o "HY_PORT='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+  echo "关闭端口跳跃"
 
   iptables -t nat -F PREROUTING >/dev/null 2>&1
   ip6tables -t nat -F PREROUTING >/dev/null 2>&1
@@ -1225,6 +1235,9 @@ disable_hy2hopping(){
 install_brutal(){
   bash <(curl -fsSL https://tcp.hy2.sh/)
 }
+
+
+
 # 作者介绍
 print_with_delay "Reality Hysteria2 二合一脚本 by 绵阿羊" 0.03
 echo ""
@@ -1235,7 +1248,7 @@ install_base
 # Check if reality.json, sing-box, and sing-box.service already exist
 if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -f "/root/sbox/mianyang.sh" ] && [ -f "/usr/bin/mianyang" ] && [ -f "/root/sbox/sing-box" ] && [ -f "/etc/systemd/system/sing-box.service" ]; then
     echo ""
-    yellow "sing-box-reality-hysteria2已经安装"
+    yellow "sing-box-reality-hysteria2已经安装，输入mianyang调用菜单"
     echo ""
     green "请选择选项:"
     echo ""
@@ -1287,6 +1300,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           exit 0
           ;;
       6)
+      while true; do
           iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
 
               if [ "$iswarp" = "FALSE" ]; then
@@ -1304,18 +1318,26 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
                   green "2. 切换为全局warp接管（ipv4优先）"
                   green "3. 手动添加规则（教程）"                  
                   green "4. 删除warp分流"
+                  green "0. 退出"
                   echo ""
-                  read -p "请输入对应数字（1-3）: " warp_input
+                  read -p "请输入对应数字（0-4）: " warp_input
               case $warp_input in
                 1)
                   #切换为全局接管
                   jq '.route.final = "warp-IPv6-prefer-out"' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
-                  systemctl reload sing-box
+                  
+                  if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+                    echo "检查配置文件成功，重启服务..."
+                    systemctl reload sing-box
+                  fi
                   ;;
                 2)
                   #切换为v4优先全局接管
                   jq '.route.final = "warp-IPv4-prefer-out"' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
-                  systemctl reload sing-box
+                  if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+                    echo "检查配置文件成功，重启服务..."
+                    systemctl reload sing-box
+                  fi
                   ;;
                 3)
                   #手动添加warp分流
@@ -1328,18 +1350,23 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
                     warp_disable
                   fi
                   ;;
+                0)
+                    # 退出循环
+                    echo "退出"
+                    break
+                    ;;
                 *)
-                  echo "无效的选项"
+                  echo "无效选项，请重新选择"
                   ;;
               esac
 
 
               fi
-              echo "配置文件更新成功"
-
+          done
           exit 0
           ;;
       7)
+      while true; do
           ishopping=$(grep '^HY_HOPPING=' /root/sbox/config | cut -d'=' -f2)
 
           if [ "$ishopping" = "FALSE" ]; then
@@ -1355,18 +1382,16 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
               green "1. 关闭端口跳跃"
               green "2. 重新设置"
               green "3. 查看规则"
+              green "0. 退出"
               echo ""
-              read -p "请输入对应数字（1-3）: " hopping_input
+              read -p "请输入对应数字（0-3）: " hopping_input
               echo ""
               case $hopping_input in
                 1)
                   disable_hy2hopping
-                  echo "端口跳跃规则已删除"
                   ;;
                 2)
                   disable_hy2hopping
-                  echo "端口跳跃规则已删除"
-                  echo "开始重新设置端口跳跃"
                   enable_hy2hopping
                   ;;
                 3)
@@ -1375,12 +1400,16 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
                   # 查看IPv6的NAT规则
                   ip6tables -t nat -L -n -v | grep "udp"
                   ;;
+                0)
+                  echo "退出"
+                  break
+                  ;;
                 *)
-                  echo "无效的选项"
+                  echo "无效的选项，请重新选择"
                   ;;
               esac
           fi
-
+        done
           exit 0
           ;;
           
@@ -1390,7 +1419,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
 	        exit 0
           ;;
       *)
-          echo "Invalid choice. Exiting."
+          echo "错误选项，退出"
           exit 1
           ;;
 	esac
