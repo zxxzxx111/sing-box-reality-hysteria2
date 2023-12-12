@@ -511,7 +511,7 @@ cat << EOF
             "up_mbps": 50, //上行速度，windows，macos不会生效所以可随便写
             "down_mbps": $brutal_up //下行速度，对应服务器的下行速度，当然可自行修改
         }
-    },
+    }},
     {
       "tag": "direct",
       "type": "direct"
