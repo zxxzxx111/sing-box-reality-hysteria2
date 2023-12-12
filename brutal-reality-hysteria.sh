@@ -1010,6 +1010,7 @@ modify_singbox() {
 
     #修改config
     sed -i "s/REALITY_PORT='[^']*'/REALITY_PORT='$reality_port'/" /root/sbox/config
+    sed -i "s/REALITY_BRUTAL_PORT='[^']*'/REALITY_BRUTAL_PORT='$reality_brutal_port'/" /root/sbox/config
     sed -i "s/REALITY_SERVER_NAME='[^']*'/REALITY_SERVER_NAME='$reality_server_name'/" /root/sbox/config
     sed -i "s/HY_PORT='[^']*'/HY_PORT='$hy_port'/" /root/sbox/config
     sed -i "s/BRUTAL_UP='[^']*'/BRUTAL_UP='$brutal_up'/" /root/sbox/config
