@@ -732,6 +732,10 @@ cat << EOF
     }
   ],
   "outbounds": [
+    {
+      "tag": "proxy",
+      "type": "selector",
+      "outbounds": [
         "auto",
         "direct",
         "sing-box-reality",

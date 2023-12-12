@@ -668,7 +668,11 @@ cat << EOF
       "users": []
     }
   ],
-  "outbounds": [
+    "outbounds": [
+    {
+      "tag": "proxy",
+      "type": "selector",
+      "outbounds": [
         "auto",
         "direct",
         "sing-box-reality",
