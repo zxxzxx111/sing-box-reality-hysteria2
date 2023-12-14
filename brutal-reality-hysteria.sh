@@ -1313,6 +1313,8 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
                   read -p "是否开启? (y/n): " confirm
                   if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
                     warp_enable
+                  else
+                    break
                   fi
               else
                   yellow "warp分流已经开启"
