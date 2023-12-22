@@ -4,8 +4,8 @@
 # 12.11更新
 
 - 全面适配sing-box1.8.0
-- 新添加了warp解锁功能（默认openai和奈飞，可切换为全局warp接管解锁all），输入mianyang，查看。
-- 新添加了hysteria2端口跳跃功能，输入mianyang，查看。
+- 新添加了warp解锁功能
+- 新添加了hysteria2端口跳跃功能
 
 # 简介
 - Reality Hysteria2 （vmess ws）一键安装脚本
@@ -30,10 +30,6 @@ bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/
 - 完全无需域名，使用自签证书部署hy2，（使用argo隧道支持vmess ws优选ip（理论上比普通优选ip更快））
 - 支持修改reality端口号和域名，hysteria2端口号
 - 无脑生成sing-box，clash-meta，v2rayN，nekoray等通用链接格式
-
-![](https://img.mareep.net/blog/2023/12/22670b590ded0df4b5e8663878628136.jpg)
-![](https://img.mareep.net/blog/2023/12/389786b320b3b0dd905b90e323483cff.png)
-![](https://img.mareep.net/blog/2023/12/565952a919e87dbdcf76e2f3071562af.png)
 
 
 ### 关于warp解锁教程

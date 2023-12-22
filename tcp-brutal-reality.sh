@@ -703,7 +703,121 @@ rules:
     - MATCH,节点选择
 EOF
 }
+warp_enable(){
+    echo "开始注册warp"
+    # 注册warp
+    output=$(bash -c "$(curl -L warp-reg.vercel.app)")
 
+    # 获取关键词
+    v6=$(echo "$output" | grep -oP '"v6": "\K[^"]+' | awk 'NR==2')
+    private_key=$(echo "$output" | grep -oP '"private_key": "\K[^"]+')
+    reserved=$(echo "$output" | grep -oP '"reserved_str": "\K[^"]+')
+    echo $v6
+    # File path of the JSON configuration
+    config_file="/root/sbox/sbconfig_server.json"
+
+    # Command to modify the JSON configuration in-place
+jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" '
+    .route = {
+      "final": "direct",
+      "rules": [
+        {
+          "rule_set": ["geosite-openai","geosite-netflix"],
+          "outbound": "warp-IPv6-out"
+        },
+        {
+          "rule_set": "geosite-disney",
+          "outbound": "warp-IPv6-out" 
+        },
+        {
+          "domain_keyword": [
+            "ipaddress"
+          ],
+          "outbound": "warp-IPv6-out" 
+        }
+      ],
+      "rule_set": [
+        { 
+          "tag": "geosite-openai",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/openai.srs",
+          "download_detour": "direct"
+        },
+        {
+          "tag": "geosite-netflix",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/netflix.srs",
+          "download_detour": "direct"
+        },
+        {
+          "tag": "geosite-disney",
+          "type": "remote",
+          "format": "binary",
+          "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/disney.srs",
+          "download_detour": "direct"
+        }
+      ]
+    } | .outbounds += [
+      {
+        "type": "direct",
+        "tag": "warp-IPv4-out",
+        "detour": "wireguard-out",
+        "domain_strategy": "ipv4_only"
+      },
+      {
+        "type": "direct",
+        "tag": "warp-IPv6-out",
+        "detour": "wireguard-out",
+        "domain_strategy": "ipv6_only"
+      },
+      {
+        "type": "direct",
+        "tag": "warp-IPv6-prefer-out",
+        "detour": "wireguard-out",
+        "domain_strategy": "prefer_ipv6"
+      },
+      {
+        "type": "direct",
+        "tag": "warp-IPv4-prefer-out",
+        "detour": "wireguard-out",
+        "domain_strategy": "prefer_ipv4"
+      },
+      {
+        "type": "wireguard",
+        "tag": "wireguard-out",
+        "server": "162.159.192.1",
+        "server_port": 2408,
+        "local_address": [
+          "172.16.0.2/32",
+          $v6 + "/128"
+        ],
+        "private_key": $private_key,
+        "peer_public_key": "bmXOC+F1FxEMF9dyiK2H5/1SUtzH0JuVo51h2wPfgyo=",
+        "reserved": $reserved,
+        "mtu": 1280
+      }
+    ]' "$config_file" > temp_config.json && mv temp_config.json "$config_file"
+
+    sed -i "s/WARP_ENABLE=FALSE/WARP_ENABLE=TRUE/" /root/sbox/config
+
+    if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+      echo "检查配置文件成功，重启服务..."
+      systemctl reload sing-box
+    fi
+}
+#关闭warp
+warp_disable(){
+    config_file="/root/sbox/sbconfig_server.json"
+    #删除路由和出战
+    jq 'del(.route) | del(.outbounds[] | select(.tag == "warp-IPv4-out" or .tag == "warp-IPv6-out" or .tag == "warp-IPv4-prefer-out" or .tag == "warp-IPv6-prefer-out" or .tag == "wireguard-out"))' "$config_file" > temp_config.json && mv temp_config.json "$config_file"
+    sed -i "s/WARP_ENABLE=TRUE/WARP_ENABLE=FALSE/" /root/sbox/config
+    if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+      echo "检查配置文件成功，重启服务..."
+      systemctl reload sing-box
+    fi
+}
 #enable bbr
 enable_bbr() {
     # temporary workaround for installing bbr
@@ -787,6 +901,32 @@ uninstall_singbox() {
 }
 
 # install_base
+
+# 安装依赖
+install_base(){
+  # 安装qrencode jq
+  local packages=("qrencode" "jq" "iptables")
+  for package in "${packages[@]}"; do
+    if ! command -v "$package" &> /dev/null; then
+      echo "正在安装 $package..."
+      if [ -n "$(command -v apt)" ]; then
+        sudo apt update > /dev/null 2>&1
+        sudo apt install -y "$package" > /dev/null 2>&1
+      elif [ -n "$(command -v yum)" ]; then
+        sudo yum install -y "$package"
+      elif [ -n "$(command -v dnf)" ]; then
+        sudo dnf install -y "$package"
+      else
+        echo "无法安装 $package。请手动安装，并重新运行脚本。"
+        exit 1
+      fi
+      echo "$package 已安装。"
+    else
+      echo "$package 已安装。"
+    fi
+  done
+}
+
 install_brutal(){
   bash <(curl -fsSL https://tcp.hy2.sh/)
 }
@@ -805,6 +945,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
     echo "5. 更新sing-box内核"
     echo "6. 一键开启bbr"
     echo "7. 重启sing-box"
+    echo "8. warp分流"
     echo ""
     read -p "Enter your choice (1-7): " choice
 
@@ -848,7 +989,75 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
       7)
           systemctl restart sing-box
           echo "重启完成"
-	  exit 0
+	        exit 0
+          ;;
+      8)
+        while true; do
+          iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
+
+              if [ "$iswarp" = "FALSE" ]; then
+                  yellow "warp分流未开启，准备开启"
+                  read -p "是否开启? (y/n): " confirm
+                  if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+                    warp_enable
+                  else
+                    break
+                  fi
+              else
+                  yellow "warp分流已经开启"
+                  echo ""
+                  green "请选择选项："
+                  echo ""
+                  green "1. 切换为全局warp接管（ipv6优先，推荐）"
+                  green "2. 切换为全局warp接管（ipv4优先）"
+                  green "3. 手动添加规则（教程）"                  
+                  green "4. 删除warp分流"
+                  green "0. 退出"
+                  echo ""
+                  read -p "请输入对应数字（0-4）: " warp_input
+              case $warp_input in
+                1)
+                  #切换为全局接管
+                  jq '.route.final = "warp-IPv6-prefer-out"' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
+                  if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+                    echo "检查配置文件成功，重启服务..."
+                    systemctl reload sing-box
+                  fi
+                  ;;
+                2)
+                  #切换为v4优先全局接管
+                  jq '.route.final = "warp-IPv4-prefer-out"' /root/sbox/sbconfig_server.json > temp_config.json && mv temp_config.json /root/sbox/sbconfig_server.json
+                  if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
+                    echo "检查配置文件成功，重启服务..."
+                    systemctl reload sing-box
+                  fi
+                  ;;
+                3)
+                  #手动添加warp分流
+                  echo "用脚本实现实在过于繁琐，远不如自己手动配置方便推荐阅读：https://github.com/vveg26/sing-box-reality-hysteria2#关于warp解锁教程"
+                  ;;
+                4)
+                  #切换为全局接管
+                  read -p "注意：此操作会覆盖原有分流配置，输入y继续? (y/n): " confirm
+                  if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+                    warp_disable
+                  fi
+                  ;;
+                0)
+                    # 退出循环
+                    echo "退出"
+                    break
+                    ;;
+                *)
+                  echo "无效的选项"
+                  ;;
+              esac
+
+
+              fi
+              echo "配置文件更新成功"
+          done
+          exit 0
           ;;
       *)
           echo "Invalid choice. Exiting."
@@ -857,7 +1066,7 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
 	esac
 	fi
 
-  
+install_base  
 install_brutal
 
 mkdir -p "/root/sbox/"
@@ -924,6 +1133,8 @@ REALITY_SERVER_NAME='$reality_server_name'
 # Brutal
 BRUTAL_UP='$brutal_up'
 BRUTAL_DOWN='$brutal_down'
+#
+WARP_ENABLE=FALSE
 EOF
 
 
@@ -937,6 +1148,8 @@ cat > /root/sbox/sbconfig_server.json << EOF
   },
   "inbounds": [
     {
+      "sniff": true,
+      "sniff_override_destination": true,
       "type": "vless",
       "tag": "vless-in",
       "listen": "::",
