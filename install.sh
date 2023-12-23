@@ -30,8 +30,6 @@ show_status(){
         memory_usage_mb=$((memory_usage / 1024))  # 转换为MB
         latest_version_tag=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | grep -Po '"tag_name": "\K.*?(?=")' | sort -V | tail -n 1)
         latest_version=${latest_version_tag#v}  # Remove 'v' prefix from version number
-        echo "最新版本: $latest_version"
-        echo "当前版本: $(/root/sbox/sing-box version 2>/dev/null | awk '/version/{print $NF}')"
         echo ""
         iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
         hyhop=$(grep '^HY_HOPPING=' /root/sbox/config | cut -d'=' -f2)
@@ -1586,11 +1584,12 @@ while :; do
         echo "域名 $reality_server_name 不支持 TLS 1.3 或 HTTP/2，请重新输入."
     fi
 done
-echo "域名 $reality_server_name 符合."
+info "域名 $reality_server_name 符合."
 echo ""
 echo ""
 # hysteria2
 warning "开始配置hysteria2..."
+echo ""
 hy_password=$(/root/sbox/sing-box generate rand --hex 8)
 info "password: $hy_password"
 echo ""
