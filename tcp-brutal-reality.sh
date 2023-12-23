@@ -1549,7 +1549,7 @@ if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
     systemctl daemon-reload
     systemctl enable sing-box > /dev/null 2>&1
     systemctl start sing-box
-    #systemctl restart sing-box
+    systemctl restart sing-box
     install_shortcut
     show_client_configuration
     hint "输入mianyang,打开菜单"

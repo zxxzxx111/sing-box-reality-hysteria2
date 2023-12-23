@@ -1051,17 +1051,19 @@ uninstall_singbox() {
     warning "开始卸载..."
     disable_hy2hopping
     # Stop and disable services
-    systemctl stop sing-box 
-    systemctl disable sing-box  > /dev/null 2>&1
+    systemctl stop sing-box argo
+    systemctl disable sing-box argo > /dev/null 2>&1
 
     # Remove service files
     rm -f /etc/systemd/system/sing-box.service
+    rm -f /etc/systemd/system/argo.service
 
     # Remove configuration and executable files
     rm -f /root/sbox/sbconfig_server.json
     rm -f /root/sbox/sing-box
-    rm -f /root/sbox/mianyang.sh
     rm -f /usr/bin/mianyang
+    rm -f /root/sbox/mianyang.sh
+    rm -f /root/sbox/cloudflared-linux
     rm -f /root/sbox/self-cert/private.key
     rm -f /root/sbox/self-cert/cert.pem
     rm -f /root/sbox/config
@@ -1803,8 +1805,10 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable argo > /dev/null 2>&1
+systemctl enable argo
 systemctl start argo
+systemctl restart argo
+
 #generate singbox server config
 cat > /root/sbox/sbconfig_server.json << EOF
 {
@@ -1922,7 +1926,7 @@ if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
     systemctl daemon-reload
     systemctl enable sing-box > /dev/null 2>&1
     systemctl start sing-box
-    #systemctl restart sing-box
+    systemctl restart sing-box
     install_shortcut
     show_client_configuration
     hint "输入mianyang,打开菜单"
