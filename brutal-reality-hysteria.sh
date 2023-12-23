@@ -96,7 +96,7 @@ install_pkgs() {
 install_shortcut() {
   cat > /root/sbox/mianyang.sh << EOF
 #!/usr/bin/env bash
-bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/install.sh) \$1
+bash <(curl -fsSL https://github.com/vveg26/sing-box-reality-hysteria2/raw/main/brutal-reality-hysteria.sh) \$1
 EOF
   chmod +x /root/sbox/mianyang.sh
   ln -sf /root/sbox/mianyang.sh /usr/bin/mianyang
@@ -1603,7 +1603,7 @@ disable_hy2hopping(){
 }
 
 # 作者介绍
-print_with_delay "Reality Hysteria2 二合一脚本 by 绵阿羊" 0.03
+print_with_delay "Brutal Vision Reality Hysteria2 三合一脚本 by 绵阿羊" 0.03
 echo ""
 echo ""
 #install pkgs
