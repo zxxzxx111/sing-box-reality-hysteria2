@@ -1321,7 +1321,7 @@ while :; do
     esac
 done
 
-    jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" --arg warp_out "$warp_out" --arg ipaddress "$ipaddress" --arg tport "$tport" '
+    jq --arg private_key "$private_key" --arg v6 "$v6" --arg reserved "$reserved" --arg warp_out "$warp_out" --arg ipaddress "$ipaddress" --arg tport "$tport" --arg ssipaddress "$ssipaddress" --arg sstport "$sstport" --arg sspwd "$sspwd" '
         .route = {
           "final": "direct",
           "rules": [
