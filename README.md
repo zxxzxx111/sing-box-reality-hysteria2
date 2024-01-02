@@ -1,10 +1,10 @@
 - 强烈建议开启bbr加速，可大幅加快节点reality和vmess节点的速度
 - 安装完成后终端输入 mianyang 可再次调用本脚本
 
-# 12.22更新
 
-- 优化逻辑和UI
-- 适配sing-box1.8.0
+# 新增功能（排序从新到旧）
+- 二合一版本中新增singbox版任意门解锁，任意门中转等操作（测试）
+- 全面适配sing-box1.8.0
 - 新增更多warp解锁功能，geo和domain_keword,全局接管等
 - 新添加了hysteria2端口跳跃功能
 
