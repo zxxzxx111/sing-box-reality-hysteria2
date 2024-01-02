@@ -1305,7 +1305,7 @@ while :; do
         6)
             read -p "请输入落地机vps ip: " ssipaddress
             read -p "请输入落地机vps 端口: " sstport
-            read -p "请输入落地机vps ss密码: " sstport
+            read -p "请输入落地机vps ss密码: " sspwd
             warp_out="ss-out"
             sed -i "s/WARP_MODE=.*/WARP_MODE=5/" /root/sbox/config
             break
