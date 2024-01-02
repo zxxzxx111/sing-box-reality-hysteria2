@@ -1545,7 +1545,7 @@ process_ssko() {
         fi
     else
         read -p "请输入解锁服务监听端口: " fport
-        sspwd=$(/root/sbox/sing-box generate rand --hex 16)
+        sspwd=$(/root/sbox/sing-box generate rand 16 --base64)
         info "此vps的ss密码为：$sspwd"
         jq --arg sspwd "$sspwd" --arg fport "$fport" '
             .inbounds += [
