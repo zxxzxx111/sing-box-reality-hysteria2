@@ -1258,6 +1258,7 @@ enable_warp(){
     tport=53
     ssipaddress="1.0.0.1"
     sstport=53
+    sspwd="8JCsPssfgS8tiRwiMlhARg=="
 while :; do
     warning "请选择需要设置的策略（默认为warp-v6优先）"
     echo ""
@@ -1268,7 +1269,7 @@ while :; do
     info "3. 仅允许Ipv6"
     info "4. 仅允许Ipv4"
     info "5. 任意门链式解锁"
-    info "5. ss链式解锁"
+    info "6. ss链式解锁"
     info "0. 退出"
     echo ""
     read -p "请输入对应数字（0-6）: " user_input
@@ -1544,8 +1545,8 @@ process_ssko() {
         fi
     else
         read -p "请输入解锁服务监听端口: " fport
-        read -p "请输入ss密码: " sspwd
-        info "ss密码为：$sspwd"
+        sspwd=$(/root/sbox/sing-box generate rand --hex 16)
+        info "此vps的ss密码为：$sspwd"
         jq --arg sspwd "$sspwd" --arg fport "$fport" '
             .inbounds += [
                 {   
