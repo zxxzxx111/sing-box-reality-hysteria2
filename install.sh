@@ -937,7 +937,7 @@ process_warp(){
     while :; do
         iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
         if [ "$iswarp" = "FALSE" ]; then
-          warning "分流解锁未开启，是否开启（默认warp解锁openai和奈飞）"
+          warning "分流解锁功能未开启，是否开启（默认为: warp解锁openai和奈飞）"
           read -p "是否开启? (y/n 默认为y): " confirm
           confirm=${confirm:-"y"}
           if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
@@ -1410,7 +1410,7 @@ done
         ]' "/root/sbox/sbconfig_server.json" > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp "/root/sbox/sbconfig_server.json"
 
     sed -i "s/WARP_ENABLE=FALSE/WARP_ENABLE=TRUE/" /root/sbox/config
-    #sed -i "s/WARP_OPTION=.*/WARP_OPTION=0/" /root/sbox/config
+    sed -i "s/WARP_OPTION=.*/WARP_OPTION=0/" /root/sbox/config
     reload_singbox
 }
 
