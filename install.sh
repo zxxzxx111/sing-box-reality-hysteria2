@@ -980,6 +980,10 @@ process_warp(){
                     current_mode="任意门解锁"
                     current_mode1="doko"
                     ;;
+                5)
+                    current_mode="ss解锁"
+                    current_mode1="ss-out"
+                    ;;
                 *)
                     current_option="unknow!"
                     ;;
@@ -1007,9 +1011,13 @@ process_warp(){
             reload_singbox
           ;;
           2)
+          if [ "$current_mode1" != "doko" ]; then
             jq --arg current_mode1 "$current_mode1" '.route.final = $current_mode1' /root/sbox/sbconfig_server.json > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp /root/sbox/sbconfig_server.json
             sed -i "s/WARP_OPTION=.*/WARP_OPTION=1/" /root/sbox/config
             reload_singbox
+          else
+            warning "任意门解锁无法使用全局接管，请使用ss解锁策略"
+          fi
             ;;
           4)
           while :; do
@@ -1023,7 +1031,8 @@ process_warp(){
               info "2. Ipv4优先"
               info "3. 仅允许Ipv6"
               info "4. 仅允许Ipv4"
-              info "5. 任意门解锁"
+              info "5. 任意门链式解锁"
+              info "6. ss链式解锁"
               info "0. 退出"
               echo ""
 
@@ -1051,11 +1060,20 @@ process_warp(){
                       break
                       ;;
                   5)
-                      read -p "请输入转发至的vps ip: " ipaddress
-                      read -p "请输入转发至的vps端口: " tport
+                      read -p "请输入落地机vps ip: " ipaddress
+                      read -p "请输入落地机vps 端口: " tport
                       jq --arg new_address "$ipaddress" --argjson new_port "$tport" '.outbounds |= map(if .tag == "doko" then .override_address = $new_address | .override_port = ($new_port | tonumber) else . end)' /root/sbox/sbconfig_server.json > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp /root/sbox/sbconfig_server.json
                       warp_out="doko"
                       sed -i "s/WARP_MODE=.*/WARP_MODE=4/" /root/sbox/config
+                      break
+                      ;;
+                  6)
+                      read -p "请输入落地机vps ip: " ssipaddress
+                      read -p "请输入落地机vps 端口: " sstport
+                      read -p "请输入落地机vps ss密码: " sspwd
+                      jq --arg new_address "$ssipaddress" --arg sspwd "$sspwd" --argjson new_port "$sstport" '.outbounds |= map(if .tag == "ss-out" then .server = $new_address | .password = $sspwd | .server_port = ($new_port | tonumber) else . end)' /root/sbox/sbconfig_server.json > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp /root/sbox/sbconfig_server.json
+                      warp_out="ss-out"
+                      sed -i "s/WARP_MODE=.*/WARP_MODE=5/" /root/sbox/config
                       break
                       ;;
                   0)
@@ -1238,6 +1256,8 @@ enable_warp(){
     reserved=$(echo "$output" | grep -oP '"reserved_str": "\K[^"]+')
     ipaddress="1.0.0.1"
     tport=53
+    ssipaddress="1.0.0.1"
+    sstport=53
 while :; do
     warning "请选择需要设置的策略（默认为warp-v6优先）"
     echo ""
@@ -1247,10 +1267,11 @@ while :; do
     info "2. Ipv4优先"
     info "3. 仅允许Ipv6"
     info "4. 仅允许Ipv4"
-    info "5. 任意门解锁（443）"
+    info "5. 任意门链式解锁"
+    info "5. ss链式解锁"
     info "0. 退出"
     echo ""
-    read -p "请输入对应数字（0-4）: " user_input
+    read -p "请输入对应数字（0-6）: " user_input
     user_input=${user_input:-1}
     case $user_input in
         1)
@@ -1274,10 +1295,18 @@ while :; do
             break
             ;;
         5)
-            read -p "请输入转发至的vps ip: " ipaddress
-            read -p "请输入转发至的vps端口: " tport
+            read -p "请输入落地机vps ip: " ssipaddress
+            read -p "请输入落地机vps 端口: " sstport
             warp_out="doko"
             sed -i "s/WARP_MODE=.*/WARP_MODE=4/" /root/sbox/config
+            break
+            ;;
+        6)
+            read -p "请输入落地机vps ip: " ssipaddress
+            read -p "请输入落地机vps 端口: " sstport
+            read -p "请输入落地机vps ss密码: " sstport
+            warp_out="ss-out"
+            sed -i "s/WARP_MODE=.*/WARP_MODE=5/" /root/sbox/config
             break
             ;;
         0)
@@ -1368,17 +1397,25 @@ done
             "override_address": $ipaddress,
             "override_port": ($tport | tonumber),
             "proxy_protocol": 0
+          },
+          {
+            "type": "shadowsocks",
+            "tag": "ss-out",
+            "server": $ssipaddress,
+            "server_port": ($sstport | tonumber),
+            "method": "2022-blake3-aes-128-gcm",
+            "password": $sspwd
           }
         ]' "/root/sbox/sbconfig_server.json" > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp "/root/sbox/sbconfig_server.json"
 
     sed -i "s/WARP_ENABLE=FALSE/WARP_ENABLE=TRUE/" /root/sbox/config
-    sed -i "s/WARP_OPTION=.*/WARP_OPTION=0/" /root/sbox/config
+    #sed -i "s/WARP_OPTION=.*/WARP_OPTION=0/" /root/sbox/config
     reload_singbox
 }
 
 #关闭warp
 disable_warp(){
-    jq 'del(.route) | del(.outbounds[] | select(.tag == "warp-IPv4-out" or .tag == "warp-IPv6-out" or .tag == "doko" or .tag == "warp-IPv4-prefer-out" or .tag == "warp-IPv6-prefer-out" or .tag == "wireguard-out"))' "/root/sbox/sbconfig_server.json" > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp "/root/sbox/sbconfig_server.json"
+    jq 'del(.route) | del(.outbounds[] | select(.tag == "warp-IPv4-out" or .tag == "warp-IPv6-out" or .tag == "doko" or .tag == "ss-out" or .tag == "warp-IPv4-prefer-out" or .tag == "warp-IPv6-prefer-out" or .tag == "wireguard-out"))' "/root/sbox/sbconfig_server.json" > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp "/root/sbox/sbconfig_server.json"
     sed -i "s/WARP_ENABLE=TRUE/WARP_ENABLE=FALSE/" /root/sbox/config
     reload_singbox
 }
@@ -1484,6 +1521,43 @@ process_dokoko() {
                 }
             ]' "$config_file" > "${config_file}.temp" && mv "${config_file}.temp" "$config_file"
         echo "已添加任意门解锁机配置"
+        reload_singbox
+    fi
+}
+process_ssko() {
+    warning "SS落地机设置"
+    config_file="/root/sbox/sbconfig_server.json"
+    tag="ss-in"
+    existing_port=$(jq -r --arg tag "$tag" '.inbounds[] | select(.tag == $tag) | .listen_port' "$config_file")
+    existing_pwd=$(jq -r --arg tag "$tag" '.inbounds[] | select(.tag == $tag) | .password' "$config_file")
+    if [ -n "$existing_port" ]; then
+        echo "已存在的SS,监听端口号为: $existing_port"
+        echo "已存在的SS,密码为: $existing_pwd"
+        # Provide a menu option to delete the existing configuration
+        read -p "是否删除已存在的配置？ (y/n): " delete_option
+        if [ "$delete_option" = "y" ]; then
+            jq --arg tag "$tag" '.inbounds = (.inbounds | map(select(.tag != $tag)))' "$config_file" > "${config_file}.temp" && mv "${config_file}.temp" "$config_file"
+            echo "已删除配置"
+            reload_singbox
+        else
+            echo "未删除配置"
+        fi
+    else
+        read -p "请输入解锁服务监听端口: " fport
+        read -p "请输入ss密码: " sspwd
+        info "ss密码为：$sspwd"
+        jq --arg sspwd "$sspwd" --arg fport "$fport" '
+            .inbounds += [
+                {   
+                    "type": "shadowsocks",
+                    "tag": "ss-in",
+                    "listen": "::",
+                    "listen_port": ($fport | tonumber),
+                    "method": "2022-blake3-aes-128-gcm",
+                    "password": $sspwd
+                }
+            ]' "$config_file" > "${config_file}.temp" && mv "${config_file}.temp" "$config_file"
+        echo "已添加ss解锁机配置"
         reload_singbox
     fi
 }
@@ -1619,6 +1693,8 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
     echo ""
     warning "sing-box-reality-hysteria2已安装"
     show_status
+    echo ""
+    hint "=======常规配置========="
     warning "请选择选项:"
     echo ""
     info "1. 重新安装"
@@ -1628,13 +1704,17 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
     info "5. 一键开启bbr"
     info "6. 流媒体解锁"
     info "7. hysteria2端口跳跃"
-    info "8. 任意门中转操作"
+    info "8. 中转任意门操作"
     info "0. 卸载"
-    hint "========================="
-    info "9. 设置任意门解锁机（配合待解锁机）"
+    echo ""
+    hint "=======落地机解锁配置======"
+    echo ""
+    info "9.  落地机任意门解锁"
+    info "10. 落地机ss解锁"
+    echo ""
     hint "========================="
     echo ""
-    read -p "请输入对应数字 (0-7): " choice
+    read -p "请输入对应数字 (0-10): " choice
 
     case $choice in
       1)
@@ -1673,6 +1753,10 @@ if [ -f "/root/sbox/sbconfig_server.json" ] && [ -f "/root/sbox/config" ] && [ -
           ;;
       9) 
           process_dokoko
+          exit 0
+          ;;
+      10) 
+          process_ssko
           exit 0
           ;;
       0)
