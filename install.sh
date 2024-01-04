@@ -215,7 +215,21 @@ show_client_configuration() {
   hy_server_name=$(grep -o "HY_SERVER_NAME='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
   hy_password=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .users[0].password' /root/sbox/sbconfig_server.json)
   # Generate the hy link
-  hy2_link="hysteria2://$hy_password@$server_ip:$hy_port?insecure=1&sni=$hy_server_name"
+  ishopping=$(grep '^HY_HOPPING=' /root/sbox/config | cut -d'=' -f2)
+  if [ "$ishopping" = "FALSE" ]; then
+    hy2_link="hysteria2://$hy_password@$server_ip:$hy_port?insecure=1&sni=$hy_server_name"
+  else
+    iptables_rule=$(iptables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
+    ipv6tables_rule=$(ip6tables -t nat -L -n -v | grep "udp" | grep -oP 'dpts:\K\d+:\d+')
+    if [ -z "$iptables_rule" ] && [ -z "$ipv6tables_rule" ]; then
+        echo "未找到端口范围。"
+        exit 1
+    fi
+    output_range="${iptables_rule:-$ipv6tables_rule}"
+    formatted_range=$(echo "$output_range" | sed 's/:/-/')
+
+    hy2_link="hysteria2://$hy_password@$server_ip:$hy_port?insecure=1&sni=$hy_server_name&mport=${hy_port},${formatted_range}"
+  fi
   echo ""
   echo "" 
   show_notice "Hysteria2通用链接 二维码 通用参数" 
@@ -232,6 +246,11 @@ show_client_configuration() {
   echo ""
   echo "服务器ip: $server_ip"
   echo "端口号: $hy_port"
+  if [ "$ishopping" = "FALSE" ]; then
+    echo "端口跳跃未开启"
+  else
+    echo "跳跃端口为${formatted_range}"
+  fi
   echo "密码password: $hy_password"
   echo "域名SNI: $hy_server_name"
   echo "跳过证书验证（允许不安全）: True"
@@ -881,10 +900,10 @@ modify_singbox() {
         if curl --tlsv1.3 --http2 -sI "https://$reality_server_name" | grep -q "HTTP/2"; then
             break
         else
-            echo "域名 $reality_server_name 不支持 TLS 1.3 或 HTTP/2，请重新输入."
+            warning "域名 $reality_server_name 不支持 TLS 1.3 或 HTTP/2，请重新输入."
         fi
     done
-    echo "域名 $reality_server_name 符合."
+    info "域名 $reality_server_name 符合."
     echo ""
     # modifying hysteria2 configuration
     warning "开始修改hysteria2端口号"
