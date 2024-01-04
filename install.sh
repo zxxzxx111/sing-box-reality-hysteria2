@@ -1268,11 +1268,44 @@ process_warp(){
     done
 }
 enable_warp(){
-    warning "开始注册warp..."
-    output=$(bash -c "$(curl -L warp-reg.vercel.app)")
-    v6=$(echo "$output" | grep -oP '"v6": "\K[^"]+' | awk 'NR==2')
-    private_key=$(echo "$output" | grep -oP '"private_key": "\K[^"]+')
-    reserved=$(echo "$output" | grep -oP '"reserved_str": "\K[^"]+')
+    #默认提供的warp节点
+while :; do
+    warning "请选择是否需要注册warp"
+    echo ""
+    info "请选择选项："
+    echo ""
+    info "1. 使用绵羊提供的warp节点(默认)"
+    info "2. 使用手动刷的warp节点"
+    info "0. 退出"
+    echo ""
+    read -p "请输入对应数字（0-2）: " user_input
+    user_input=${user_input:-1}
+    case $user_input in
+        1)
+            v6="2606:4700:110:87ad:b400:91:eadb:887f"
+            private_key="wIC19yRRSJkhVJcE09Qo9bE3P3PIwS3yyqyUnjwNO34="
+            reserved="XiBe"
+            break
+            ;;
+        2)
+            warning "开始注册warp..."
+            output=$(bash -c "$(curl -L warp-reg.vercel.app)")
+            v6=$(echo "$output" | grep -oP '"v6": "\K[^"]+' | awk 'NR==2')
+            private_key=$(echo "$output" | grep -oP '"private_key": "\K[^"]+')
+            reserved=$(echo "$output" | grep -oP '"reserved_str": "\K[^"]+')
+            break
+            ;;
+        0)
+            # Exit the loop if option 0 is selected
+            echo "退出"
+            exit 0
+            ;;
+        *)
+            # Handle invalid input
+            echo "无效的输入，请重新输入"
+            ;;
+    esac
+done
     ipaddress="1.0.0.1"
     tport=53
     ssipaddress="1.0.0.1"
