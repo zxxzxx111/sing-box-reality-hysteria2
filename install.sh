@@ -35,6 +35,7 @@ print_with_delay() {
     echo
 }
 
+
 show_status(){
     singbox_pid=$(pgrep sing-box)
     singbox_status=$(systemctl is-active sing-box)
@@ -760,14 +761,25 @@ modify_singbox() {
     hy_current_port=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .listen_port' /root/sbox/sbconfig_server.json)
     hy_port=$(modify_port "$hy_current_port" "HYSTERIA2")
     info "生成的端口号为: $hy_port"
+    info "修改hysteria2应用证书路径"
+    hy_current_cert=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .tls.certificate_path' /root/sbox/sbconfig_server.json)
+    hy_current_key=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .tls.key_path' /root/sbox/sbconfig_server.json)
+    read -p "请输入证书cert路径 (默认: $hy_current_cert): " hy_cert
+    hy_cert=${hy_cert:-$hy_current_cert}
+    read -p "请输入证书key路径 (默认: $hy_current_key): " hy_key
+    hy_key=${hy_key:-$hy_current_key}
     jq --arg reality_port "$reality_port" \
     --arg hy_port "$hy_port" \
     --arg reality_server_name "$reality_server_name" \
+    --arg hy_cert "$hy_cert" \
+    --arg hy_key "$hy_key" \
     '
     (.inbounds[] | select(.tag == "vless-in") | .listen_port) |= ($reality_port | tonumber) |
     (.inbounds[] | select(.tag == "hy2-in") | .listen_port) |= ($hy_port | tonumber) |
     (.inbounds[] | select(.tag == "vless-in") | .tls.server_name) |= $reality_server_name |
-    (.inbounds[] | select(.tag == "vless-in") | .tls.reality.handshake.server) |= $reality_server_name
+    (.inbounds[] | select(.tag == "vless-in") | .tls.reality.handshake.server) |= $reality_server_name |
+    (.inbounds[] | select(.tag == "hy2-in") | .tls.certificate_path) |= $hy_cert |
+    (.inbounds[] | select(.tag == "hy2-in") | .tls.key_path) |= $hy_key
     ' /root/sbox/sbconfig_server.json > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp /root/sbox/sbconfig_server.json
     reload_singbox
 }
