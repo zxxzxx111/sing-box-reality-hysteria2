@@ -428,7 +428,7 @@ cat << EOF
           "d.metacubex.one"
         ],
         "outbound": "direct"
-      },      },
+      },
       {
         "rule_set": "geosite-wechat",
         "outbound": "WeChat"
