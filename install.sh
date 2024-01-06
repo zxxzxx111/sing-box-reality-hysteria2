@@ -764,6 +764,9 @@ modify_singbox() {
     info "修改hysteria2应用证书路径"
     hy_current_cert=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .tls.certificate_path' /root/sbox/sbconfig_server.json)
     hy_current_key=$(jq -r '.inbounds[] | select(.tag == "hy2-in") | .tls.key_path' /root/sbox/sbconfig_server.json)
+    hy_current_domain=$(grep -o "HY_SERVER_NAME='[^']*'" /root/sbox/config | awk -F"'" '{print $2}')
+    read -p "请输入证书域名 (默认: $hy_current_domain): " hy_domain
+    hy_domain=${hy_domain:-$hy_current_domain}
     read -p "请输入证书cert路径 (默认: $hy_current_cert): " hy_cert
     hy_cert=${hy_cert:-$hy_current_cert}
     read -p "请输入证书key路径 (默认: $hy_current_key): " hy_key
@@ -781,6 +784,9 @@ modify_singbox() {
     (.inbounds[] | select(.tag == "hy2-in") | .tls.certificate_path) |= $hy_cert |
     (.inbounds[] | select(.tag == "hy2-in") | .tls.key_path) |= $hy_key
     ' /root/sbox/sbconfig_server.json > /root/sbox/sbconfig_server.temp && mv /root/sbox/sbconfig_server.temp /root/sbox/sbconfig_server.json
+    
+    sed -i "s/HY_SERVER_NAME='.*'/HY_SERVER_NAME='$hy_domain'/" /root/sbox/config
+
     reload_singbox
 }
 
@@ -1384,18 +1390,20 @@ process_doko() {
     done
 }
 process_dokoko() {
-    warning "任意门落地机设置"
-    warning "建议使用ss解锁，singbox任意门存在一定bug"
+    warning "任意门落地机设置，目前只支持解锁使用443端口的网站"
+    #TODO 目前只支持点对点操作，一台解锁对一台待解锁（为了防止端口直接暴露被利用），可以尝试使用singbox的路由规则，筛选入站的流量再流出，文档https://sing-box.sagernet.org/zh/configuration/route/rule/
     config_file="/root/sbox/sbconfig_server.json"
     tag="direct-in"
     existing_port=$(jq -r --arg tag "$tag" '.inbounds[] | select(.tag == $tag) | .listen_port' "$config_file")
+    existing_ip=$(jq -r --arg tag "$tag" '.inbounds[] | select(.tag == $tag) | .listen' "$config_file")
+
     if [ -n "$existing_port" ]; then
-        echo "已存在的监听端口号为: $existing_port"
+        echo "已存在的监听为: $existing_ip : $existing_port "
         read -p "是否删除已存在的配置？ (y/n): " delete_option
         if [ "$delete_option" = "y" ]; then
             jq --arg tag "$tag" '.inbounds = (.inbounds | map(select(.tag != $tag)))' "$config_file" > "${config_file}.temp" && mv "${config_file}.temp" "$config_file"
             echo "已删除配置"
-            reload_singbox
+            systemctl restart sing-box
         else
             echo "未删除配置"
         fi
@@ -1408,14 +1416,23 @@ process_dokoko() {
                 warning "端口必须为非空数字，请重新输入."
             fi
         done
-        jq --arg fport "$fport" '
+        while true; do
+          read -p "请输入被解锁机vps ip: " fip
+          ip_regex="^([0-9]{1,3}\.){3}[0-9]{1,3}$"
+          if [[ $fip =~ $ip_regex ]]; then
+              break
+          else
+              warning "输入的IP地址格式不合法"
+          fi
+        done
+        jq --arg fport "$fport" --arg fip "$fip" '
             .inbounds += [
                 {   
                     "sniff": true,
                     "sniff_override_destination": true,
                     "type": "direct",
                     "tag": "direct-in",
-                    "listen": "::",
+                    "listen": $fip,
                     "listen_port": ($fport | tonumber),
                     "override_port": 443
                 }
