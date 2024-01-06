@@ -17,42 +17,38 @@ info() { echo -e "\033[32m\033[01m$*\033[0m"; }   # 绿色
 hint() { echo -e "\033[33m\033[01m$*\033[0m"; }   # 黄色
 #show system and singbox info
 show_status(){
-    # 获取sing-box服务的PID
     singbox_pid=$(pgrep sing-box)
-
-    # 获取Sing-box服务状态
     singbox_status=$(systemctl is-active sing-box)
-
     if [ "$singbox_status" == "active" ]; then
-        # 获取CPU和内存占用信息
         cpu_usage=$(ps -p $singbox_pid -o %cpu | tail -n 1)
-        memory_usage=$(ps -p $singbox_pid -o rss | tail -n 1)
-        memory_usage_mb=$((memory_usage / 1024))  # 转换为MB
-        latest_version_tag=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | grep -Po '"tag_name": "\K.*?(?=")' | sort -V | tail -n 1)
+        memory_usage_mb=$(( $(ps -p "$singbox_pid" -o rss | tail -n 1) / 1024 ))
+
+        p_latest_version_tag=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | jq -r '[.[] | select(.prerelease==true)][0].tag_name')
+        latest_version_tag=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | jq -r '[.[] | select(.prerelease==false)][0].tag_name')
+
         latest_version=${latest_version_tag#v}  # Remove 'v' prefix from version number
-        echo ""
+        p_latest_version=${p_latest_version_tag#v}  # Remove 'v' prefix from version number
+
         iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
         hyhop=$(grep '^HY_HOPPING=' /root/sbox/config | cut -d'=' -f2)
-        # 显示UI信息
-        warning "Sing-box服务状态信息:"
+
+        warning "SING-BOX服务状态信息:"
         hint "========================="
         info "状态: 运行中"
         info "CPU 占用: $cpu_usage%"
         info "内存 占用: ${memory_usage_mb}MB"
-        info "singbox最新版本: $latest_version"
-        info "singbox当前版本: $(/root/sbox/sing-box version 2>/dev/null | awk '/version/{print $NF}')"
-        info "warp分流开启(输入6管理): $iswarp"
-        info "hysteria2端口跳跃开启(输入7管理): $hyhop"
+        info "singbox测试版最新版本: $p_latest_version"
+        info "singbox正式版最新版本: $latest_version"
+        info "singbox当前版本(输入4管理切换): $(/root/sbox/sing-box version 2>/dev/null | awk '/version/{print $NF}')"
+        info "warp流媒体解锁(输入6管理): $(if [ "$iswarp" == "TRUE" ]; then echo "开启"; else echo "关闭"; fi)"
+        info "hy2端口跳跃(输入7管理): $(if [ "$hyhop" == "TRUE" ]; then echo "开启"; else echo "关闭"; fi)"
         hint "========================="
-        # 可以添加其他资源信息获取，例如磁盘占用等
-
-        # 显示UI完成后的其他处理
-        # 例如：可以在这里添加展示其他资源信息的逻辑
     else
-        warning "Sing-box 未运行"
+        warning "SING-BOX 未运行！"
     fi
 
 }
+
 #show notice
 show_notice() {
     local message="$1"
@@ -110,43 +106,96 @@ reload_singbox(){
       error "配置文件检查错误"
     fi
 }
-# install beta singbox
-#TODO install other singbox
 install_singbox(){
-  arch=$(uname -m)
-  echo "Architecture: $arch"
-  # Map architecture names
-  case ${arch} in
-      x86_64)
-          arch="amd64"
-          ;;
-      aarch64)
-          arch="arm64"
-          ;;
-      armv7l)
-          arch="armv7"
-          ;;
-  esac
+		echo "请选择需要安装的SING-BOX版本:"
+		echo "1. 正式版"
+		echo "2. 测试版"
+		read -p "输入你的选项 (1-2, 默认: 1): " version_choice
+		version_choice=${version_choice:-1}
+		# Set the tag based on user choice
+		if [ "$version_choice" -eq 2 ]; then
+			echo "Installing Alpha version..."
+			latest_version_tag=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | jq -r '[.[] | select(.prerelease==true)][0].tag_name')
+		else
+			echo "Installing Stable version..."
+			latest_version_tag=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | jq -r '[.[] | select(.prerelease==false)][0].tag_name')
+		fi
+		# No need to fetch the latest version tag again, it's already set based on user choice
+		latest_version=${latest_version_tag#v}  # Remove 'v' prefix from version number
+		echo "Latest version: $latest_version"
+		# Detect server architecture
+		arch=$(uname -m)
+		echo "本机架构为: $arch"
+    case ${arch} in
+      x86_64) arch="amd64" ;;
+      aarch64) arch="arm64" ;;
+      armv7l) arch="armv7" ;;
+    esac
+    # latest_version_tag=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | grep -Po '"tag_name": "\K.*?(?=")' | sort -V | tail -n 1)
+    # latest_version=${latest_version_tag#v}
+    echo "最新版本为: $latest_version"
+    package_name="sing-box-${latest_version}-linux-${arch}"
+    url="https://github.com/SagerNet/sing-box/releases/download/${latest_version_tag}/${package_name}.tar.gz"
+    curl -sLo "/root/${package_name}.tar.gz" "$url"
+    tar -xzf "/root/${package_name}.tar.gz" -C /root
+    mv "/root/${package_name}/sing-box" /root/sbox
+    rm -r "/root/${package_name}.tar.gz" "/root/${package_name}"
+    chown root:root /root/sbox/sing-box
+    chmod +x /root/sbox/sing-box
+}
 
-  #beta版本
-  latest_version_tag=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | grep -Po '"tag_name": "\K.*?(?=")' | sort -V | tail -n 1)
-  latest_version=${latest_version_tag#v}  # Remove 'v' prefix from version number
-  echo "Latest version: $latest_version"
-  # Detect server architecture
-  # Prepare package names
-  package_name="sing-box-${latest_version}-linux-${arch}"
-  # Prepare download URL
-  url="https://github.com/SagerNet/sing-box/releases/download/${latest_version_tag}/${package_name}.tar.gz"
-  # Download the latest release package (.tar.gz) from GitHub
-  curl -sLo "/root/${package_name}.tar.gz" "$url"
-  # Extract the package and move the binary to /root
-  tar -xzf "/root/${package_name}.tar.gz" -C /root
-  mv "/root/${package_name}/sing-box" /root/sbox
-  # Cleanup the package
-  rm -r "/root/${package_name}.tar.gz" "/root/${package_name}"
-  # Set the permissions
-  chown root:root /root/sbox/sing-box
-  chmod +x /root/sbox/sing-box
+change_singbox(){
+			echo "切换SING-BOX版本..."
+			echo ""
+			# Extract the current version
+			current_version_tag=$(/root/sbox/sing-box version | grep 'sing-box version' | awk '{print $3}')
+
+			# Fetch the latest stable and alpha version tags
+			latest_stable_version=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | jq -r '[.[] | select(.prerelease==false)][0].tag_name')
+			latest_alpha_version=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | jq -r '[.[] | select(.prerelease==true)][0].tag_name')
+
+			# Determine current version type (stable or alpha)
+			if [[ $current_version_tag == *"-alpha"* ]]; then
+				echo "当前为测试版，准备切换为最新正式版..."
+				echo ""
+				new_version_tag=$latest_stable_version
+			else
+				echo "当前为正式版，准备切换为最新测试版..."
+				echo ""
+				new_version_tag=$latest_alpha_version
+			fi
+
+			# Stop the service before updating
+			systemctl stop sing-box
+
+			# Download and replace the binary
+			arch=$(uname -m)
+			case $arch in
+				x86_64) arch="amd64" ;;
+				aarch64) arch="arm64" ;;
+				armv7l) arch="armv7" ;;
+			esac
+
+			package_name="sing-box-${new_version_tag#v}-linux-${arch}"
+			url="https://github.com/SagerNet/sing-box/releases/download/${new_version_tag}/${package_name}.tar.gz"
+
+			curl -sLo "/root/${package_name}.tar.gz" "$url"
+			tar -xzf "/root/${package_name}.tar.gz" -C /root
+			mv "/root/${package_name}/sing-box" /root/sbox/sing-box
+
+			# Cleanup the package
+			rm -r "/root/${package_name}.tar.gz" "/root/${package_name}"
+
+			# Set the permissions
+			chown root:root /root/sbox/sing-box
+			chmod +x /root/sbox/sing-box
+
+			# Restart the service with the new binary
+			systemctl daemon-reload
+			systemctl start sing-box
+
+			echo "Version switched and service restarted with the new binary."
+			echo ""
 }
 
 generate_port() {
@@ -1308,6 +1357,7 @@ update_singbox(){
 }
 
 process_singbox() {
+  while :; do
     echo ""
     echo ""
     info "请选择选项："
@@ -1317,8 +1367,10 @@ process_singbox() {
     info "3. 查看sing-box状态"
     info "4. 查看sing-box实时日志"
     info "5. 查看sing-box服务端配置"
+    info "6. 切换SINGBOX内核版本"
+    info "0. 退出"
     echo ""
-    read -p "请输入对应数字（1-5）: " user_input
+    read -p "请输入对应数字（0-）: " user_input
     echo ""
     case "$user_input" in
         1)
@@ -1329,26 +1381,40 @@ process_singbox() {
                 systemctl restart sing-box
             fi
             info "重启完成"
+            break
             ;;
         2)
             update_singbox
+            break
             ;;
         3)
             warning "singbox基本信息如下(ctrl+c退出)"
             systemctl status sing-box
+            break
             ;;
         4)
             warning "singbox日志如下(ctrl+c退出)："
             journalctl -u sing-box -o cat -f
+            break
             ;;
         5)
             echo "singbox服务端如下："
             cat /root/sbox/sbconfig_server.json
+            break
             ;;
+        6)
+            change_singbox
+            break
+            ;;
+        0)
+          echo "退出"
+          break
+          ;;
         *)
-            echo "请输入正确选项: $1"
+            echo "请输入正确选项: 0-6"
             ;;
     esac
+  done
 }
 
 process_hy2hopping(){

@@ -112,7 +112,7 @@ reload_singbox() {
     fi
 }
 
-#TODO install other singbox
+
 install_singbox(){
 		echo "请选择需要安装的SING-BOX版本:"
 		echo "1. 正式版"
@@ -1518,7 +1518,7 @@ process_singbox() {
           break
           ;;
         *)
-            echo "请输入正确选项: 0-5"
+            echo "请输入正确选项: 0-6"
             ;;
     esac
   done
