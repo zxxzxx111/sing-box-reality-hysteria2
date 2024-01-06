@@ -176,7 +176,7 @@ change_singbox(){
 			latest_alpha_version=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | jq -r '[.[] | select(.prerelease==true)][0].tag_name')
 
 			# Determine current version type (stable or alpha)
-			if [[ $current_version_tag == *"-alpha"* ]]; then
+      if [[ $current_version_tag == *"-alpha"* || $current_version_tag == *"-rc"* || $current_version_tag == *"-beta"* ]]; then
 				echo "当前为测试版，准备切换为最新正式版..."
 				echo ""
 				new_version_tag=$latest_stable_version

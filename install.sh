@@ -162,7 +162,7 @@ change_singbox(){
 			latest_alpha_version=$(curl -s "https://api.github.com/repos/SagerNet/sing-box/releases" | jq -r '[.[] | select(.prerelease==true)][0].tag_name')
 
 			# Determine current version type (stable or alpha)
-			if [[ $current_version_tag == *"-alpha"* ]]; then
+      if [[ $current_version_tag == *"-alpha"* || $current_version_tag == *"-rc"* || $current_version_tag == *"-beta"* ]]; then
 				echo "当前为测试版，准备切换为最新正式版..."
 				echo ""
 				new_version_tag=$latest_stable_version
@@ -1477,7 +1477,7 @@ process_singbox() {
     info "6. 切换SINGBOX内核版本"
     info "0. 退出"
     echo ""
-    read -p "请输入对应数字（0-）: " user_input
+    read -p "请输入对应数字（0-6）: " user_input
     echo ""
     case "$user_input" in
         1)
