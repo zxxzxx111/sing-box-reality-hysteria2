@@ -30,7 +30,6 @@ show_status(){
         p_latest_version=${p_latest_version_tag#v}  # Remove 'v' prefix from version number
 
         iswarp=$(grep '^WARP_ENABLE=' /root/sbox/config | cut -d'=' -f2)
-        hyhop=$(grep '^HY_HOPPING=' /root/sbox/config | cut -d'=' -f2)
 
         warning "SING-BOX服务状态信息:"
         hint "========================="
@@ -41,7 +40,6 @@ show_status(){
         info "singbox正式版最新版本: $latest_version"
         info "singbox当前版本(输入4管理切换): $(/root/sbox/sing-box version 2>/dev/null | awk '/version/{print $NF}')"
         info "warp流媒体解锁(输入6管理): $(if [ "$iswarp" == "TRUE" ]; then echo "开启"; else echo "关闭"; fi)"
-        info "hy2端口跳跃(输入7管理): $(if [ "$hyhop" == "TRUE" ]; then echo "开启"; else echo "关闭"; fi)"
         hint "========================="
     else
         warning "SING-BOX 未运行！"

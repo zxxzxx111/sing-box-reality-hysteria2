@@ -1511,7 +1511,7 @@ enable_hy2hopping(){
     iptables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
     ip6tables -t nat -A PREROUTING -i eth0 -p udp --dport $start_port:$end_port -j DNAT --to-destination :$hy_current_port
 
-    sed -i "s/HY_HOPPING=FALSE/HY_HOPPING='TRUE'/" /root/sbox/config
+    sed -i "s/HY_HOPPING=FALSE/HY_HOPPING=TRUE/" /root/sbox/config
 
 
 }
@@ -1520,6 +1520,8 @@ disable_hy2hopping(){
   echo "关闭端口跳跃..."
   iptables -t nat -F PREROUTING >/dev/null 2>&1
   ip6tables -t nat -F PREROUTING >/dev/null 2>&1
+  sed -i "s/HY_HOPPING=TRUE/HY_HOPPING=FALSE/" /root/sbox/config
+    #TOREMOVE compatible with legacy users
   sed -i "s/HY_HOPPING='TRUE'/HY_HOPPING=FALSE/" /root/sbox/config
 }
 
