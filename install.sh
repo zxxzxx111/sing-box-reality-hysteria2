@@ -1876,7 +1876,7 @@ if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
     systemctl restart sing-box
     install_shortcut
     show_client_configuration
-    warning "输入mianyang,即可打开菜单"
+    warning "输入sb2,即可打开菜单"
 else
     error "配置文件检查失败，启动失败!"
 fi
