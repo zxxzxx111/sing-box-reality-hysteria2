@@ -1461,7 +1461,7 @@ if /root/sbox/sing-box check -c /root/sbox/sbconfig_server.json; then
     systemctl restart sing-box
     install_shortcut
     show_client_configuration
-    hint "输入mianyang,打开菜单"
+    hint "输入sb2,打开菜单"
 else
     error "check sing-box server config profile error!"
 fi
